@@ -1,0 +1,190 @@
+.container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background: var(--background);
+    min-height: 100vh;
+}
+
+.tabs {
+    display: flex;
+    background: var(--card-bg);
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    overflow-x: auto;
+}
+
+.tab {
+    padding: 16px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+.activeTab {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.summaryCard {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 16px;
+    /* Card Radius */
+    margin: 16px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.summaryLabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    /* Medium */
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summaryAmount {
+    font-size: 18px;
+    font-weight: 700;
+    /* Bold */
+    color: var(--foreground);
+}
+
+.pending {
+    color: #EF4444;
+    /* Red for pending */
+}
+
+.filterRow {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.filterChip {
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.activeFilter {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    background: var(--primary-light);
+    border-radius: 16px;
+    min-height: 200px;
+    border: 1px dashed var(--primary);
+}
+
+.emptyText {
+    color: var(--primary);
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.emptySub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    max-width: 250px;
+    line-height: 1.4;
+}
+
+.link {
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.fab {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    background: var(--primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+}
+
+.listItem {
+    background: var(--card-bg);
+    padding: 16px;
+    border-radius: 16px;
+    /* Card Radius */
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.itemMain {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.itemTitle {
+    font-weight: 600;
+    color: var(--foreground);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.itemSub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.itemAmount {
+    font-weight: 700;
+    color: var(--foreground);
+    font-size: 16px;
+}
+
+.status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #FEE2E2;
+    color: #991B1B;
+    margin-left: 8px;
+    font-weight: 600;
+}

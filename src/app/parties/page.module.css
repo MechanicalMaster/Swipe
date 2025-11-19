@@ -1,15 +1,15 @@
 .container {
     padding: 16px;
     padding-bottom: 80px;
-    background: #f3f4f6;
+    background: var(--background);
     min-height: 100vh;
 }
 
 .tabs {
     display: flex;
-    background: white;
+    background: var(--card-bg);
     padding: 0 16px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -18,9 +18,10 @@
 .tab {
     padding: 16px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--text-secondary);
     cursor: pointer;
     border-bottom: 2px solid transparent;
+    font-size: 14px;
 }
 
 .activeTab {
@@ -36,30 +37,35 @@
 
 .summaryCard {
     flex: 1;
-    padding: 12px;
-    border-radius: 8px;
+    padding: 16px;
+    border-radius: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .collectCard {
-    background: #ecfdf5;
-    color: #065f46;
+    background: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #D1FAE5;
 }
 
 .payCard {
-    background: #fef2f2;
-    color: #991b1b;
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #FEE2E2;
 }
 
 .summaryLabel {
     font-size: 12px;
     font-weight: 600;
+    text-transform: uppercase;
 }
 
 .summaryAmount {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
 }
 
@@ -70,40 +76,44 @@
     justify-content: center;
     padding: 40px 20px;
     text-align: center;
-    background: white;
-    border-radius: 12px;
+    background: var(--card-bg);
+    border-radius: 16px;
     min-height: 300px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .emptyIcon {
     font-size: 48px;
-    color: #cbd5e1;
+    color: #CBD5E1;
     margin-bottom: 16px;
 }
 
 .emptyText {
-    color: #64748b;
+    color: var(--text-secondary);
     margin-bottom: 24px;
+    font-weight: 500;
 }
 
 .addButton {
     background: var(--primary);
     color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 14px 24px;
+    border-radius: 12px;
     font-weight: 600;
     width: 100%;
     margin-bottom: 12px;
+    font-size: 14px;
 }
 
 .secondaryButton {
     background: white;
     color: var(--primary);
     border: 1px solid var(--primary);
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 14px 24px;
+    border-radius: 12px;
     font-weight: 600;
     width: 100%;
+    font-size: 14px;
 }
 
 .list {
@@ -113,24 +123,27 @@
 }
 
 .listItem {
-    background: white;
+    background: var(--card-bg);
     padding: 16px;
-    border-radius: 12px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #e0f2fe;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    /* Squircle */
+    background: var(--primary-light);
     color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 18px;
 }
 
 .info {
@@ -139,10 +152,13 @@
 
 .name {
     font-weight: 600;
-    color: #1f2937;
+    color: var(--foreground);
+    font-size: 14px;
+    margin-bottom: 2px;
 }
 
 .subtext {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--text-secondary);
+    font-weight: 500;
 }

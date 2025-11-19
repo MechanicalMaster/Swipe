@@ -2,17 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FiHome, FiBox, FiUsers, FiGrid } from 'react-icons/fi';
-import { RiBillLine } from 'react-icons/ri';
+import { FiHome, FiBox, FiUsers, FiGrid, FiFileText } from 'react-icons/fi';
+import { RiBillLine } from 'react-icons/ri'; // This import will become unused but I'll keep it as per instructions to not make unrelated edits unless explicitly removed.
 import clsx from 'clsx';
 import styles from './BottomNav.module.css';
 
 const navItems = [
-    { name: 'Home', href: '/', icon: FiHome },
-    { name: 'Bills', href: '/bills', icon: RiBillLine },
-    { name: 'Products', href: '/products', icon: FiBox },
-    { name: 'Parties', href: '/parties', icon: FiUsers },
-    { name: 'More', href: '/more', icon: FiGrid },
+    { label: 'Home', href: '/', icon: FiHome },
+    { label: 'Bills', href: '/bills', icon: FiFileText },
+    { label: 'Products', href: '/products', icon: FiBox },
+    { label: 'Parties', href: '/parties', icon: FiUsers },
+    { label: 'More', href: '/more', icon: FiGrid },
 ];
 
 export default function BottomNav() {
@@ -32,9 +32,9 @@ export default function BottomNav() {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
-                    <Link key={item.name} href={item.href} className={clsx(styles.item, isActive && styles.active)}>
+                    <Link key={item.label} href={item.href} className={clsx(styles.item, isActive && styles.active)}>
                         <Icon size={24} />
-                        <span className={styles.label}>{item.name}</span>
+                        <span className={styles.label}>{item.label}</span>
                     </Link>
                 );
             })}

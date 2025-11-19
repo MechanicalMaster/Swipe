@@ -1,18 +1,24 @@
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 
+import AuthWrapper from '@/components/Auth/AuthWrapper';
+
 export const metadata = {
-  title: "Swipe Invoice App",
-  description: "Offline-first Invoice App for MSMEs",
-  manifest: "/manifest.json",
+  title: 'Swipe Invoice',
+  description: 'Create invoices on the go',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        {children}
-        <BottomNav />
+        <AuthWrapper>
+          <div className="main-content">
+            {children}
+          </div>
+          <BottomNav />
+        </AuthWrapper>
       </body>
     </html>
   );

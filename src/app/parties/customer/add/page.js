@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePartyStore } from '@/lib/store/partyStore';
-import { FiArrowLeft, FiPlusCircle, FiChevronDown } from 'react-icons/fi';
+import { FiArrowLeft, FiPlusCircle, FiUpload, FiX } from 'react-icons/fi';
 import styles from '../../form.module.css';
 
 export default function AddCustomerPage() {
@@ -14,23 +14,41 @@ export default function AddCustomerPage() {
         name: '',
         phone: '',
         email: '',
-        gstin: '',
-        companyName: '',
-        address: ''
+        address: '',
+        documents: []
     });
+    const [showBillingAddress, setShowBillingAddress] = useState(false);
+
+    const handleFileChange = (e) => {
+        const files = Array.from(e.target.files);
+
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({
+                    ...prev,
+                    documents: [...prev.documents, {
+                        name: file.name,
+                        type: file.type,
+                        data: reader.result
+                    }]
+                }));
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const removeDocument = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            documents: prev.documents.filter((_, i) => i !== index)
+        }));
+    };
 
     const handleSave = async () => {
         if (!formData.name) return alert('Name is required');
         await addCustomer(formData);
         router.push('/parties');
-    };
-
-    const fetchGST = () => {
-        if (formData.gstin === '22AAAAA0000A1Z5') {
-            setFormData(prev => ({ ...prev, companyName: 'Tata Motors Private Limited' }));
-        } else {
-            alert('Mock Fetch: Use "22AAAAA0000A1Z5" to test');
-        }
     };
 
     return (
@@ -68,31 +86,51 @@ export default function AddCustomerPage() {
                 />
             </div>
 
-            <div className={styles.sectionLabel}>Company Details (Optional)</div>
-            <div className={styles.card}>
-                <div className={styles.row} style={{ marginBottom: 12 }}>
-                    <input
-                        className={styles.input}
-                        placeholder="GST Number"
-                        value={formData.gstin}
-                        onChange={e => setFormData({ ...formData, gstin: e.target.value })}
-                    />
-                    <button className={styles.fetchButton} onClick={fetchGST}>Fetch Details</button>
-                </div>
-                <input
-                    className={styles.input}
-                    placeholder="Company Name"
-                    value={formData.companyName}
-                    onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                />
-            </div>
-
             <div className={styles.sectionLabel}>Billing Address (Optional)</div>
             <div className={styles.card}>
-                <div className={styles.actionRow}>
-                    <FiPlusCircle size={20} color="#6b7280" />
-                    <span>Billing Address</span>
-                </div>
+                {!showBillingAddress ? (
+                    <div className={styles.actionRow} onClick={() => setShowBillingAddress(true)}>
+                        <FiPlusCircle size={20} color="#6b7280" />
+                        <span>Billing Address</span>
+                    </div>
+                ) : (
+                    <textarea
+                        className={styles.textarea}
+                        placeholder="Enter Billing Address"
+                        value={formData.address}
+                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                        autoFocus
+                    />
+                )}
+            </div>
+
+            <div className={styles.sectionLabel}>Documents (Optional)</div>
+            <div className={styles.card}>
+                <label className={styles.uploadBox}>
+                    <input
+                        type="file"
+                        multiple
+                        accept="image/*,application/pdf"
+                        style={{ display: 'none' }}
+                        onChange={handleFileChange}
+                    />
+                    <FiUpload className={styles.uploadIcon} />
+                    <span className={styles.uploadText}>Upload Identity Documents (Image/PDF)</span>
+                </label>
+
+                {formData.documents.length > 0 && (
+                    <div className={styles.fileList}>
+                        {formData.documents.map((doc, index) => (
+                            <div key={index} className={styles.fileItem}>
+                                <span>{doc.name}</span>
+                                <FiX
+                                    style={{ cursor: 'pointer', color: '#ef4444' }}
+                                    onClick={() => removeDocument(index)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className={styles.footer}>

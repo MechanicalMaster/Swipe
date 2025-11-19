@@ -12,18 +12,18 @@ const menuItems = [
         items: [
             { label: 'Company Details', icon: FiBriefcase, href: '/more/company' },
             { label: 'User Profile', icon: FiUser, href: '/more/profile' },
-            { label: 'Users & Roles', icon: FiUsers, href: '#' },
+            { label: 'Users & Roles', icon: FiUsers, href: '/coming-soon' },
         ]
     },
     {
         title: 'Settings',
         items: [
-            { label: 'Document Settings', icon: FiFileText, href: '#' },
-            { label: 'General Settings', icon: FiSettings, href: '#' },
-            { label: 'Invoice Templates', icon: FiFileText, href: '#' },
-            { label: 'Bank', icon: FiCreditCard, href: '#' },
-            { label: 'Signature', icon: FiEdit3, href: '#' },
-            { label: 'Notes & Terms', icon: FiBookOpen, href: '#' },
+            { label: 'Document Settings', icon: FiFileText, href: '/coming-soon' },
+            { label: 'General Settings', icon: FiSettings, href: '/coming-soon' },
+            { label: 'Invoice Templates', icon: FiFileText, href: '/coming-soon' },
+            { label: 'Bank', icon: FiCreditCard, href: '/coming-soon' },
+            { label: 'Signature', icon: FiEdit3, href: '/coming-soon' },
+            { label: 'Notes & Terms', icon: FiBookOpen, href: '/coming-soon' },
         ]
     }
 ];

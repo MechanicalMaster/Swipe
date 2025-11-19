@@ -1,11 +1,18 @@
 :root {
-  --primary: #2563eb;
-  --primary-light: #eff6ff;
-  --background: #f3f4f6;
-  --foreground: #1f2937;
-  --card-bg: #ffffff;
-  --border: #e5e7eb;
-  --text-secondary: #6b7280;
+  --primary: #0F6CBD;
+  /* Brand Blue */
+  --primary-light: #E0F2FE;
+  /* Soft Blue Wash */
+  --background: #F5F7FA;
+  /* Global Grey */
+  --foreground: #111827;
+  /* Ink Black */
+  --card-bg: #FFFFFF;
+  /* Surface White */
+  --border: #E5E7EB;
+  /* Light Grey */
+  --text-secondary: #6B7280;
+  /* Slate Grey */
 }
 
 body {
@@ -34,4 +41,9 @@ button {
   border: none;
   background: none;
   font-family: inherit;
+}
+
+.main-content {
+  padding-top: env(safe-area-inset-top);
+  min-height: 100vh;
 }

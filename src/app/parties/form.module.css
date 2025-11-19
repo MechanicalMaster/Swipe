@@ -1,0 +1,94 @@
+.container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background: #f3f4f6;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.sectionLabel {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1f2937;
+    margin-left: 4px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.inputGroup {
+    margin-bottom: 16px;
+}
+
+.input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+}
+
+.input:focus {
+    border-color: var(--primary);
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+}
+
+.fetchButton {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.actionRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 16px;
+    border-top: 1px solid #eee;
+    z-index: 50;
+}
+
+.saveButton {
+    width: 100%;
+    background: var(--primary);
+    color: white;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 600;
+}

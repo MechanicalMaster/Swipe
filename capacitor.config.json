@@ -1,0 +1,8 @@
+{
+    "appId": "com.swipe.app",
+    "appName": "Swipe",
+    "webDir": "out",
+    "server": {
+        "androidScheme": "https"
+    }
+}

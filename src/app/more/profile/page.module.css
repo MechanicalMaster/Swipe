@@ -1,0 +1,101 @@
+.container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background: #f3f4f6;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.sectionLabel {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1f2937;
+    margin-left: 4px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    gap: 16px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+}
+
+.item:last-child {
+    border-bottom: none;
+}
+
+.icon {
+    color: #4b5563;
+    font-size: 20px;
+}
+
+.content {
+    flex: 1;
+}
+
+.label {
+    font-size: 14px;
+    color: #1f2937;
+    margin-bottom: 2px;
+}
+
+.subLabel {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.arrow {
+    color: var(--primary);
+}
+
+.dangerItem {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    gap: 16px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    color: #ef4444;
+}
+
+.dangerIcon {
+    font-size: 20px;
+}
+
+.dangerLabel {
+    flex: 1;
+    font-size: 14px;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.supportButton {
+    background: white;
+    border: 1px solid #e5e7eb;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}

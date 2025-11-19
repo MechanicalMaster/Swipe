@@ -1,0 +1,134 @@
+.container {
+    padding: 16px;
+    padding-bottom: 100px;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.addButton {
+    width: 100%;
+    padding: 12px;
+    background: #eff6ff;
+    color: var(--primary);
+    border: 1px dashed var(--primary);
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.sectionTitle {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.itemRow {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+}
+
+.itemHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.itemInputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.totalSection {
+    margin-top: 16px;
+    border-top: 1px solid #eee;
+    padding-top: 16px;
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.grandTotal {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--primary);
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 16px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 12px;
+}
+
+.saveButton {
+    flex: 1;
+    background: var(--primary);
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+}

@@ -1,0 +1,148 @@
+.container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background: #f3f4f6;
+    min-height: 100vh;
+}
+
+.tabs {
+    display: flex;
+    background: white;
+    padding: 0 16px;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.tab {
+    padding: 16px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.activeTab {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.summaryRow {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.summaryCard {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.collectCard {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.payCard {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.summaryLabel {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.summaryAmount {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    background: white;
+    border-radius: 12px;
+    min-height: 300px;
+}
+
+.emptyIcon {
+    font-size: 48px;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.emptyText {
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+.addButton {
+    background: var(--primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.secondaryButton {
+    background: white;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    width: 100%;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.listItem {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e0f2fe;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.info {
+    flex: 1;
+}
+
+.name {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.subtext {
+    font-size: 12px;
+    color: #6b7280;
+}

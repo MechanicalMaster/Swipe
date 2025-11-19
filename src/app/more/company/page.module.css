@@ -1,0 +1,122 @@
+.container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background: #f3f4f6;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.editButton {
+    background: #fef3c7;
+    color: #d97706;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.logoSection {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+    margin-top: -40px;
+}
+
+.logoBox {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #64748b;
+    position: relative;
+}
+
+.formGroup {
+    margin-bottom: 16px;
+}
+
+.label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+    min-height: 20px;
+}
+
+.input {
+    width: 100%;
+    padding: 8px 0;
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+}
+
+.input:focus {
+    border-bottom-color: var(--primary);
+}
+
+.sectionLabel {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1f2937;
+}
+
+.actionRow {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.saveButton {
+    width: 100%;
+    background: var(--primary);
+    color: white;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-top: 24px;
+}

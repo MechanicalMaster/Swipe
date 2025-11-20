@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
 import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal } from 'react-icons/fi';
 import styles from '../page.module.css';
@@ -25,10 +25,17 @@ export default function AddProductPage() {
         notForSale: false
     });
 
+    const searchParams = useSearchParams();
+    const returnUrl = searchParams.get('returnUrl');
+
     const handleSave = async () => {
         if (!formData.name) return alert('Product Name is required');
         await addProduct(formData);
-        router.push('/products');
+        if (returnUrl) {
+            router.push(returnUrl);
+        } else {
+            router.push('/products');
+        }
     };
 
     const handleImageUpload = (e) => {

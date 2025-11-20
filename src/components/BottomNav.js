@@ -19,7 +19,7 @@ export default function BottomNav() {
     const pathname = usePathname();
 
     // Hide BottomNav on specific routes
-    if (pathname.includes('/add') || pathname.includes('/create')) {
+    if (pathname.includes('/add') || pathname.includes('/create') || pathname.includes('/view')) {
         return null;
     }
 

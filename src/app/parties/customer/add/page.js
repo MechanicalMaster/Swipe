@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { usePartyStore } from '@/lib/store/partyStore';
+import { useInvoiceStore } from '@/lib/store/invoiceStore';
 import { FiArrowLeft, FiPlusCircle, FiUpload, FiX } from 'react-icons/fi';
 import styles from '../../form.module.css';
 
@@ -45,10 +46,23 @@ export default function AddCustomerPage() {
         }));
     };
 
+    const searchParams = useSearchParams();
+    const returnUrl = searchParams.get('returnUrl');
+    const { setCustomer } = useInvoiceStore();
+
     const handleSave = async () => {
         if (!formData.name) return alert('Name is required');
-        await addCustomer(formData);
-        router.push('/parties');
+        const id = await addCustomer(formData);
+
+        if (returnUrl) {
+            // If returning to invoice, set the new customer as selected
+            if (returnUrl.includes('invoice')) {
+                setCustomer({ ...formData, id });
+            }
+            router.push(returnUrl);
+        } else {
+            router.push('/parties');
+        }
     };
 
     return (

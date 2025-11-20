@@ -3,11 +3,13 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useSettingsStore } from '@/lib/store/settingsStore';
+import { useAuthStore } from '@/lib/store/authStore';
 import { FiArrowLeft, FiUser, FiMail, FiPhone, FiTrash2, FiLogOut, FiChevronRight } from 'react-icons/fi';
 import styles from './page.module.css';
 
 export default function UserProfilePage() {
     const { userProfile, loadSettings, resetData } = useSettingsStore();
+    const { logout } = useAuthStore();
 
     useEffect(() => {
         loadSettings();
@@ -68,14 +70,18 @@ export default function UserProfilePage() {
                     <div className={styles.dangerLabel}>Delete Account</div>
                     <FiChevronRight className={styles.arrow} />
                 </div>
-                <div className={styles.item}>
+                <div className={styles.item} onClick={() => {
+                    if (confirm('Are you sure you want to logout?')) {
+                        logout();
+                    }
+                }}>
                     <FiLogOut className={styles.icon} />
                     <div className={styles.content}>
                         <div className={styles.label}>Logout</div>
                     </div>
                     <FiChevronRight className={styles.arrow} />
                 </div>
-                <div className={styles.item}>
+                <div className={styles.item} onClick={() => alert('This feature is coming soon')}>
                     <FiLogOut className={styles.icon} />
                     <div className={styles.content}>
                         <div className={styles.label}>Logout from all devices</div>

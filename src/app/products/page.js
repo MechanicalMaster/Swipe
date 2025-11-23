@@ -51,7 +51,7 @@ export default function ProductsPage() {
             </div>
 
             {filteredProducts.map((product) => (
-                <div key={product.id} className={styles.productCard}>
+                <div key={product.id} className={styles.productCard} onClick={() => alert(`Edit ${product.name} coming soon`)}>
                     <div className={styles.productIcon}>
                         {product.images && product.images.length > 0 ? (
                             <img src={product.images[0].data} alt="" style={{ width: '100%', height: '100%', borderRadius: 8, objectFit: 'cover' }} />

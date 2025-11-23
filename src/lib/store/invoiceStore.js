@@ -6,6 +6,12 @@ export const useInvoiceStore = create((set, get) => ({
     date: new Date().toISOString().split('T')[0],
     customer: null,
     items: [],
+    invoices: [], // List of all invoices
+
+    loadInvoices: async () => {
+        const invoices = await db.invoices.toArray();
+        set({ invoices: invoices.reverse() });
+    },
 
     // New Fields
     details: {
@@ -28,10 +34,23 @@ export const useInvoiceStore = create((set, get) => ({
         notes: '',
     },
     roundOff: false,
+    id: null, // For editing
 
     setInvoiceNumber: (num) => set({ invoiceNumber: num }),
     setDate: (date) => set({ date }),
     setCustomer: (customer) => set({ customer }),
+
+    setInvoice: (invoice) => set({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        date: invoice.date,
+        customer: invoice.customer,
+        items: invoice.items,
+        details: invoice.details || { reference: '', notes: '', terms: '', extraDiscount: 0, shippingCharges: 0, packagingCharges: 0 },
+        toggles: invoice.toggles || { tds: false, tcs: false, rcm: false },
+        payment: invoice.payment || { isFullyPaid: false, amountReceived: 0, mode: 'Cash', notes: '' },
+        roundOff: invoice.totals?.roundOffAmount !== 0 // Infer roundOff from totals if not explicitly saved, or just default to false if not present
+    }),
 
     updateDetails: (field, value) => set((state) => ({
         details: { ...state.details, [field]: value }
@@ -45,6 +64,7 @@ export const useInvoiceStore = create((set, get) => ({
     toggleRoundOff: () => set((state) => ({ roundOff: !state.roundOff })),
 
     resetInvoice: () => set({
+        id: null,
         invoiceNumber: 'INV-' + Date.now().toString().slice(-4), // Simple auto-increment simulation
         date: new Date().toISOString().split('T')[0],
         customer: null,

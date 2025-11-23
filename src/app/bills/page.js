@@ -95,7 +95,14 @@ export default function BillsPage() {
             ) : (
                 <div>
                     {currentList.map((item) => (
-                        <div key={item.id} className={styles.listItem}>
+                        <div key={item.id} className={styles.listItem} onClick={() => {
+                            if (activeTab === 'sales') {
+                                window.location.href = `/invoice/view?id=${item.id}`;
+                            } else {
+                                // Placeholder for purchase view
+                                alert('Purchase view coming soon');
+                            }
+                        }}>
                             <div className={styles.itemMain}>
                                 <div className={styles.itemTitle}>
                                     {item.invoiceNumber || item.purchaseNumber}

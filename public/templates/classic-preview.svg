@@ -1,0 +1,81 @@
+<svg width="600" height="850" viewBox="0 0 600 850" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="850" fill="white"/>
+  
+  <!-- Header -->
+  <text x="40" y="60" font-family="serif" font-size="24" font-weight="bold" fill="#990099">Godrej</text>
+  <text x="40" y="80" font-family="sans-serif" font-size="9">GSTIN: 27ABCCS2942R1ZR</text>
+  <text x="40" y="95" font-family="sans-serif" font-size="9">Hyderabad, Telangana</text>
+  
+  <text x="560" y="60" font-family="sans-serif" font-size="12" fill="#2563eb" text-anchor="end">TAX INVOICE</text>
+  <text x="560" y="75" font-family="sans-serif" font-size="8" fill="#666" text-anchor="end">ORIGINAL FOR RECIPIENT</text>
+
+  <!-- Bill To -->
+  <text x="40" y="140" font-family="sans-serif" font-size="10" font-weight="bold">Bill To:</text>
+  <text x="40" y="155" font-family="sans-serif" font-size="10">Vishal Sharma</text>
+  <text x="40" y="170" font-family="sans-serif" font-size="9">GSTIN: 27ABCCS2942R1ZR</text>
+  <text x="40" y="185" font-family="sans-serif" font-size="9">Gachibowli, Hyderabad</text>
+  
+  <text x="450" y="140" font-family="sans-serif" font-size="9" text-anchor="end">Invoice #:</text>
+  <text x="560" y="140" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="end">INV-1</text>
+  <text x="450" y="155" font-family="sans-serif" font-size="9" text-anchor="end">Invoice Date:</text>
+  <text x="560" y="155" font-family="sans-serif" font-size="9" text-anchor="end">16 Jun 2023</text>
+
+  <!-- Table Header -->
+  <rect x="40" y="220" width="520" height="20" fill="#2563eb"/>
+  <text x="50" y="234" font-family="sans-serif" font-size="9" fill="white" font-weight="bold">Item</text>
+  <text x="300" y="234" font-family="sans-serif" font-size="9" fill="white" font-weight="bold">HSN/SAC</text>
+  <text x="400" y="234" font-family="sans-serif" font-size="9" fill="white" font-weight="bold" text-anchor="end">Rate/Item</text>
+  <text x="460" y="234" font-family="sans-serif" font-size="9" fill="white" font-weight="bold" text-anchor="end">Qty</text>
+  <text x="550" y="234" font-family="sans-serif" font-size="9" fill="white" font-weight="bold" text-anchor="end">Amount</text>
+
+  <!-- Table Row 1 -->
+  <text x="50" y="260" font-family="sans-serif" font-size="10" font-weight="bold">Full Back Lounge Chair</text>
+  <text x="50" y="275" font-family="sans-serif" font-size="9" fill="#666">Adjustable armrest, Carbon blue</text>
+  
+  <!-- Product Images Placeholder -->
+  <rect x="50" y="290" width="40" height="40" fill="#eee"/>
+  <rect x="100" y="290" width="40" height="40" fill="#eee"/>
+  <rect x="150" y="290" width="40" height="40" fill="#eee"/>
+  
+  <text x="300" y="260" font-family="sans-serif" font-size="9">112233</text>
+  <text x="400" y="260" font-family="sans-serif" font-size="9" text-anchor="end">11,999.00</text>
+  <text x="460" y="260" font-family="sans-serif" font-size="9" text-anchor="end">1</text>
+  <text x="550" y="260" font-family="sans-serif" font-size="9" text-anchor="end">11,999.00</text>
+  
+  <line x1="40" y1="340" x2="560" y2="340" stroke="#eee" stroke-width="1"/>
+
+  <!-- Table Row 2 -->
+  <text x="50" y="360" font-family="sans-serif" font-size="10">Table Decors</text>
+  <text x="300" y="360" font-family="sans-serif" font-size="9">212232</text>
+  <text x="400" y="360" font-family="sans-serif" font-size="9" text-anchor="end">499.00</text>
+  <text x="460" y="360" font-family="sans-serif" font-size="9" text-anchor="end">1</text>
+  <text x="550" y="360" font-family="sans-serif" font-size="9" text-anchor="end">499.00</text>
+  
+  <line x1="40" y1="380" x2="560" y2="380" stroke="#2563eb" stroke-width="1"/>
+
+  <!-- Totals -->
+  <text x="450" y="400" font-family="sans-serif" font-size="9" text-anchor="end">Taxable Amount</text>
+  <text x="550" y="400" font-family="sans-serif" font-size="9" text-anchor="end">12,498.00</text>
+  
+  <text x="450" y="415" font-family="sans-serif" font-size="9" text-anchor="end">CGST 9.0%</text>
+  <text x="550" y="415" font-family="sans-serif" font-size="9" text-anchor="end">1,124.82</text>
+  
+  <text x="450" y="430" font-family="sans-serif" font-size="9" text-anchor="end">SGST 9.0%</text>
+  <text x="550" y="430" font-family="sans-serif" font-size="9" text-anchor="end">1,124.82</text>
+  
+  <text x="450" y="450" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="end">Total</text>
+  <text x="550" y="450" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="end">₹14,748.00</text>
+  
+  <line x1="40" y1="460" x2="560" y2="460" stroke="#2563eb" stroke-width="1"/>
+  
+  <!-- Footer -->
+  <text x="40" y="480" font-family="sans-serif" font-size="10" font-weight="bold">Pay using UPI:</text>
+  <rect x="40" y="490" width="60" height="60" fill="white" stroke="#000"/>
+  <rect x="45" y="495" width="50" height="50" fill="#000"/>
+  
+  <text x="120" y="490" font-family="sans-serif" font-size="9" font-weight="bold">Bank Details:</text>
+  <text x="120" y="505" font-family="sans-serif" font-size="9">Bank: YES BANK</text>
+  
+  <circle cx="520" cy="510" r="15" stroke="#2563eb" stroke-width="1" fill="none"/>
+  <text x="520" y="513" font-family="sans-serif" font-size="6" fill="#2563eb" text-anchor="middle">SIGNATURE</text>
+</svg>

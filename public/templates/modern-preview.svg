@@ -1,0 +1,68 @@
+<svg width="600" height="850" viewBox="0 0 600 850" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="850" fill="white"/>
+  
+  <!-- Header -->
+  <text x="40" y="50" font-family="sans-serif" font-size="12" font-weight="bold" fill="#2563eb">TAX INVOICE</text>
+  <text x="40" y="70" font-family="sans-serif" font-size="18" font-weight="bold">Amazon</text>
+  <text x="40" y="90" font-family="sans-serif" font-size="10" fill="#666">GSTIN: 29ABCDE1234F1Z5</text>
+  <text x="40" y="105" font-family="sans-serif" font-size="10" fill="#666">Hyderabad, Telangana, 500032</text>
+  
+  <text x="450" y="70" font-family="sans-serif" font-size="24" font-weight="bold" text-anchor="end">amazon</text>
+  <path d="M400 80 Q 425 90 450 80" stroke="#ff9900" stroke-width="2" fill="none"/>
+
+  <!-- Invoice Details -->
+  <line x1="40" y1="130" x2="560" y2="130" stroke="#eee" stroke-width="1"/>
+  
+  <text x="40" y="150" font-family="sans-serif" font-size="10" font-weight="bold">Invoice #: INV-1</text>
+  <text x="40" y="165" font-family="sans-serif" font-size="10">Invoice Date: 16 Jun 2023</text>
+  
+  <text x="300" y="150" font-family="sans-serif" font-size="10" font-weight="bold">Bill To:</text>
+  <text x="300" y="165" font-family="sans-serif" font-size="10">Amit Agarwal</text>
+  <text x="300" y="180" font-family="sans-serif" font-size="10" fill="#666">Hitech City, Hyderabad</text>
+
+  <!-- Table Header -->
+  <rect x="40" y="210" width="520" height="25" fill="#f3f4f6"/>
+  <text x="50" y="227" font-family="sans-serif" font-size="10" font-weight="bold">Item</text>
+  <text x="350" y="227" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="end">Rate</text>
+  <text x="420" y="227" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="end">Qty</text>
+  <text x="550" y="227" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="end">Amount</text>
+
+  <!-- Table Row 1 -->
+  <text x="50" y="255" font-family="sans-serif" font-size="10" font-weight="bold">Samsung Galaxy F23</text>
+  <text x="50" y="270" font-family="sans-serif" font-size="9" fill="#666">HSN: 8517</text>
+  <text x="50" y="285" font-family="sans-serif" font-size="9" fill="#666">Color: Aqua Green</text>
+  <text x="350" y="255" font-family="sans-serif" font-size="10" text-anchor="end">14,406.93</text>
+  <text x="420" y="255" font-family="sans-serif" font-size="10" text-anchor="end">1</text>
+  <text x="550" y="255" font-family="sans-serif" font-size="10" text-anchor="end">16,999.00</text>
+  <line x1="40" y1="300" x2="560" y2="300" stroke="#eee" stroke-width="1"/>
+
+  <!-- Table Row 2 -->
+  <text x="50" y="320" font-family="sans-serif" font-size="10" font-weight="bold">Samsung 45W Travel Adapter</text>
+  <text x="50" y="335" font-family="sans-serif" font-size="9" fill="#666">HSN: 8504</text>
+  <text x="350" y="320" font-family="sans-serif" font-size="10" text-anchor="end">2,117.80</text>
+  <text x="420" y="320" font-family="sans-serif" font-size="10" text-anchor="end">1</text>
+  <text x="550" y="320" font-family="sans-serif" font-size="10" text-anchor="end">2,499.00</text>
+  <line x1="40" y1="350" x2="560" y2="350" stroke="#eee" stroke-width="1"/>
+
+  <!-- Totals -->
+  <text x="450" y="380" font-family="sans-serif" font-size="10" text-anchor="end">Taxable Amount</text>
+  <text x="550" y="380" font-family="sans-serif" font-size="10" text-anchor="end">16,523.73</text>
+  
+  <text x="450" y="400" font-family="sans-serif" font-size="10" text-anchor="end">IGST 18.0%</text>
+  <text x="550" y="400" font-family="sans-serif" font-size="10" text-anchor="end">2,974.27</text>
+  
+  <line x1="400" y1="410" x2="560" y2="410" stroke="#000" stroke-width="1"/>
+  <text x="450" y="430" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="end">Total</text>
+  <text x="550" y="430" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="end">₹19,498.00</text>
+  
+  <!-- Footer -->
+  <rect x="40" y="460" width="80" height="80" fill="white" stroke="#000"/>
+  <rect x="45" y="465" width="70" height="70" fill="#000"/> <!-- QR Code Placeholder -->
+  
+  <text x="140" y="470" font-family="sans-serif" font-size="10" font-weight="bold">Bank Details:</text>
+  <text x="140" y="485" font-family="sans-serif" font-size="9">Bank: YES BANK</text>
+  <text x="140" y="500" font-family="sans-serif" font-size="9">Account #: 85789999222445</text>
+  
+  <circle cx="500" cy="480" r="20" stroke="#2563eb" stroke-width="2" fill="none"/>
+  <text x="500" y="485" font-family="sans-serif" font-size="8" fill="#2563eb" text-anchor="middle">SIGNATURE</text>
+</svg>

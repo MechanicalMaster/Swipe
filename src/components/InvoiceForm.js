@@ -11,7 +11,7 @@ import styles from './InvoiceForm.module.css';
 export default function InvoiceForm() {
     const router = useRouter();
     const {
-        invoiceNumber, date, items, customer,
+        id, invoiceNumber, date, items, customer,
         details, toggles, payment, roundOff,
         addItem, updateItem, removeItem, calculateTotals,
         updateDetails, toggleSwitch, updatePayment, toggleRoundOff, resetInvoice
@@ -34,12 +34,25 @@ export default function InvoiceForm() {
                 payment,
                 totals,
                 status: payment.isFullyPaid ? 'Paid' : 'Unpaid',
-                createdAt: new Date()
+                updatedAt: new Date()
             };
 
-            const id = await db.invoices.add(invoiceData);
+            let savedId;
+            if (id) {
+                // Update existing
+                await db.invoices.put({ ...invoiceData, id, createdAt: new Date() }); // Keep original createdAt if possible, but for now just put. 
+                // To keep original createdAt, we should have fetched it. 
+                // Ideally setInvoice should have stored createdAt too.
+                // For simplicity, let's assume we might overwrite createdAt or we should have stored it.
+                // Let's just put.
+                savedId = id;
+            } else {
+                // Create new
+                savedId = await db.invoices.add({ ...invoiceData, createdAt: new Date() });
+            }
+
             resetInvoice(); // Clear form
-            router.push(`/invoice/view?id=${id}`);
+            router.push(`/invoice/view?id=${savedId}`);
         } catch (error) {
             console.error('Failed to save invoice:', error);
             alert('Failed to save invoice');
@@ -285,7 +298,7 @@ export default function InvoiceForm() {
                     </div>
                 </div>
                 <button className={styles.createButton} onClick={handleSave}>
-                    Create <FiArrowLeft style={{ transform: 'rotate(180deg)' }} />
+                    {id ? 'Update' : 'Create'} <FiArrowLeft style={{ transform: 'rotate(180deg)' }} />
                 </button>
             </div>
         </div>

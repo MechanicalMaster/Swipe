@@ -21,5 +21,23 @@ export const usePartyStore = create((set, get) => ({
         const id = await db.vendors.add(vendor);
         set((state) => ({ vendors: [...state.vendors, { ...vendor, id }] }));
         return id;
+    },
+
+    updateCustomer: async (id, updates) => {
+        await db.customers.update(id, updates);
+        set((state) => ({
+            customers: state.customers.map(c => c.id === id ? { ...c, ...updates } : c)
+        }));
+    },
+
+    deleteCustomer: async (id) => {
+        await db.customers.delete(id);
+        set((state) => ({
+            customers: state.customers.filter(c => c.id !== id)
+        }));
+    },
+
+    getCustomer: (id) => {
+        return get().customers.find(c => c.id === parseInt(id));
     }
 }));

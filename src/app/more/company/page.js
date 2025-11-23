@@ -1,133 +1,228 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSettingsStore } from '@/lib/store/settingsStore';
-import { FiArrowLeft, FiPlusCircle, FiImage, FiChevronDown } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2, FiPlus, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { ImagePicker } from '@/components/ImagePicker';
+import { AddressBottomSheet } from '@/components/AddressBottomSheet';
 import styles from './page.module.css';
 
 export default function CompanyDetailsPage() {
     const router = useRouter();
-    const { companyDetails, loadSettings, updateCompanyDetails } = useSettingsStore();
-    const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState({ ...companyDetails });
+    const { companyDetails, updateCompanyDetails, loadSettings } = useSettingsStore();
+
+    const [isBillingSheetOpen, setIsBillingSheetOpen] = useState(false);
+    const [isShippingSheetOpen, setIsShippingSheetOpen] = useState(false);
+    const [isOptionalExpanded, setIsOptionalExpanded] = useState(false);
+    const [isGSTEnabled, setIsGSTEnabled] = useState(false);
 
     useEffect(() => {
         loadSettings();
     }, []);
 
     useEffect(() => {
-        setFormData(companyDetails);
-    }, [companyDetails]);
+        if (companyDetails.gstin) {
+            setIsGSTEnabled(true);
+        }
+    }, [companyDetails.gstin]);
 
-    const handleSave = async () => {
-        await updateCompanyDetails(formData);
-        setIsEditing(false);
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        updateCompanyDetails({ [name]: value });
+    };
+
+    const handleImageSelect = (imageData) => {
+        updateCompanyDetails({ logo: imageData });
+    };
+
+    const handleAddressSave = (type, addressData) => {
+        if (type === 'billing') {
+            updateCompanyDetails({ billingAddress: addressData });
+        } else {
+            updateCompanyDetails({ shippingAddress: addressData });
+        }
     };
 
     return (
         <div className={styles.container}>
+            {/* Header */}
             <div className={styles.header}>
-                <div className={styles.title}>
-                    <Link href="/more"><FiArrowLeft size={24} /></Link>
-                    Company Details
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <FiArrowLeft size={24} onClick={() => router.back()} style={{ cursor: 'pointer' }} />
+                    <div className={styles.headerTitle}>Company Details</div>
                 </div>
-                <button className={styles.editButton} onClick={() => setIsEditing(!isEditing)}>
-                    {isEditing ? 'Cancel' : 'Edit'}
+                <button className={styles.editButton}>
+                    <FiEdit2 size={14} /> Edit
                 </button>
             </div>
 
-            <div className={styles.card}>
-                <div className={styles.logoSection}>
-                    <div className={styles.logoBox}>
-                        <FiImage />
-                        {isEditing && (
-                            <div style={{ position: 'absolute', bottom: -5, right: -5, background: 'var(--primary)', color: 'white', borderRadius: '50%', padding: 4 }}>
-                                <FiPlusCircle size={12} />
+            <div className={styles.content}>
+                {/* Main Card */}
+                <div className={styles.card}>
+                    <div className={styles.logoContainer}>
+                        <ImagePicker image={companyDetails.logo} onImageSelect={handleImageSelect} />
+                    </div>
+
+                    <div style={{ marginTop: '40px' }}>
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Business/Company Name</label>
+                            <input
+                                name="name"
+                                value={companyDetails.name || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                                placeholder="Enter Business Name"
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={isGSTEnabled}
+                                    onChange={(e) => setIsGSTEnabled(e.target.checked)}
+                                    style={{ width: 16, height: 16 }}
+                                />
+                                <label className={styles.label} style={{ margin: 0 }}>GST Number (Optional)</label>
                             </div>
-                        )}
+                            {isGSTEnabled && (
+                                <input
+                                    name="gstin"
+                                    value={companyDetails.gstin || ''}
+                                    onChange={handleInputChange}
+                                    className={styles.input}
+                                    placeholder="Enter GSTIN"
+                                />
+                            )}
+                            {!isGSTEnabled && <div className={styles.value}>NA</div>}
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Business Phone No.</label>
+                            <input
+                                name="phone"
+                                value={companyDetails.phone || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                                placeholder="Enter Phone Number"
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Business Email</label>
+                            <input
+                                name="email"
+                                value={companyDetails.email || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                                placeholder="Enter Email"
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Trade/Brand Name</label>
+                            <input
+                                name="tradeName"
+                                value={companyDetails.tradeName || companyDetails.name || ''}
+                                onChange={handleInputChange}
+                                className={styles.input}
+                                placeholder="Enter Trade Name"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <div className={styles.formGroup}>
-                    <div className={styles.label}>Business/Company Name</div>
-                    {isEditing ? (
-                        <input
-                            className={styles.input}
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Enter Company Name"
-                        />
-                    ) : (
-                        <div className={styles.value}>{formData.name || 'Sethiyagold'}</div>
+                {/* Address Section */}
+                <div>
+                    <div style={{ fontWeight: 600, marginBottom: '12px' }}>Billing Address</div>
+                    <button className={styles.addressButton} onClick={() => setIsBillingSheetOpen(true)}>
+                        <div className={styles.iconCircle}><FiPlus size={16} /></div>
+                        {companyDetails.billingAddress?.addressLine1 ? 'Edit Billing Address' : 'Billing Address'}
+                    </button>
+                    {companyDetails.billingAddress?.addressLine1 && (
+                        <div style={{ marginTop: '8px', fontSize: '14px', color: '#666', paddingLeft: '12px' }}>
+                            {companyDetails.billingAddress.addressLine1}, {companyDetails.billingAddress.city}
+                        </div>
                     )}
                 </div>
 
-                <div className={styles.formGroup}>
-                    <div className={styles.label}>GST Number</div>
-                    {isEditing ? (
-                        <input
-                            className={styles.input}
-                            value={formData.gstin}
-                            onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
-                            placeholder="Enter GSTIN"
-                        />
-                    ) : (
-                        <div className={styles.value}>{formData.gstin || 'NA'}</div>
+                <div>
+                    <div style={{ fontWeight: 600, marginBottom: '12px' }}>Shipping Address</div>
+                    <button className={styles.addressButton} onClick={() => setIsShippingSheetOpen(true)}>
+                        <div className={styles.iconCircle}><FiPlus size={16} /></div>
+                        {companyDetails.shippingAddress?.addressLine1 ? 'Edit Shipping Address' : 'Shipping Address'}
+                    </button>
+                    {companyDetails.shippingAddress?.addressLine1 && (
+                        <div style={{ marginTop: '8px', fontSize: '14px', color: '#666', paddingLeft: '12px' }}>
+                            {companyDetails.shippingAddress.addressLine1}, {companyDetails.shippingAddress.city}
+                        </div>
                     )}
                 </div>
 
-                <div className={styles.formGroup}>
-                    <div className={styles.label}>Business Phone No.</div>
-                    {isEditing ? (
-                        <input
-                            className={styles.input}
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            placeholder="Enter Phone"
-                        />
-                    ) : (
-                        <div className={styles.value}>{formData.phone || '8454881721'}</div>
-                    )}
-                </div>
+                {/* Optional Fields */}
+                <div>
+                    <div className={styles.accordionHeader} onClick={() => setIsOptionalExpanded(!isOptionalExpanded)}>
+                        <div>
+                            <div>Optional Fields</div>
+                            <div style={{ fontSize: '12px', color: '#666', fontWeight: 400 }}>Pan Number, Alternate Contact Number, Website</div>
+                        </div>
+                        {isOptionalExpanded ? <FiChevronUp /> : <FiChevronDown />}
+                    </div>
 
-                <div className={styles.formGroup}>
-                    <div className={styles.label}>Business Email</div>
-                    {isEditing ? (
-                        <input
-                            className={styles.input}
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            placeholder="Enter Email"
-                        />
-                    ) : (
-                        <div className={styles.value}>{formData.email || '-'}</div>
+                    {isOptionalExpanded && (
+                        <div className={styles.accordionContent}>
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>PAN Number</label>
+                                <input
+                                    name="panNumber"
+                                    value={companyDetails.panNumber || ''}
+                                    onChange={handleInputChange}
+                                    className={styles.input}
+                                    placeholder="Enter PAN"
+                                />
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Alternate Contact Number</label>
+                                <input
+                                    name="alternatePhone"
+                                    value={companyDetails.alternatePhone || ''}
+                                    onChange={handleInputChange}
+                                    className={styles.input}
+                                    placeholder="Enter Alternate Number"
+                                />
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label className={styles.label}>Website</label>
+                                <input
+                                    name="website"
+                                    value={companyDetails.website || ''}
+                                    onChange={handleInputChange}
+                                    className={styles.input}
+                                    placeholder="Enter Website"
+                                />
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
 
-            <div className={styles.sectionLabel}>Billing Address</div>
-            <div className={styles.actionRow}>
-                <FiPlusCircle size={20} color="#6b7280" />
-                <span>Billing Address</span>
-            </div>
+            <AddressBottomSheet
+                isOpen={isBillingSheetOpen}
+                onClose={() => setIsBillingSheetOpen(false)}
+                onSave={(data) => handleAddressSave('billing', data)}
+                initialData={companyDetails.billingAddress}
+                title="Enter Billing Address"
+            />
 
-            <div className={styles.sectionLabel}>Shipping Address</div>
-            <div className={styles.actionRow}>
-                <FiPlusCircle size={20} color="#6b7280" />
-                <span>Shipping Address</span>
-            </div>
-
-            <div className={styles.sectionLabel} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                Optional Fields <FiChevronDown />
-            </div>
-
-            {isEditing && (
-                <button className={styles.saveButton} onClick={handleSave}>
-                    Save Details
-                </button>
-            )}
+            <AddressBottomSheet
+                isOpen={isShippingSheetOpen}
+                onClose={() => setIsShippingSheetOpen(false)}
+                onSave={(data) => handleAddressSave('shipping', data)}
+                initialData={companyDetails.shippingAddress}
+                title="Enter Shipping Address"
+                showAutofill={true}
+            />
         </div>
     );
 }

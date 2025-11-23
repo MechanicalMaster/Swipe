@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { InvoiceTemplate } from '@/components/InvoiceTemplate';
+import { getTemplate } from '@/components/InvoiceTemplates';
 
 export const generatePDF = async (data) => {
     const div = document.createElement('div');
@@ -11,9 +11,11 @@ export const generatePDF = async (data) => {
     div.style.top = '0';
     document.body.appendChild(div);
 
+    const TemplateComponent = getTemplate(data.templateId || 'modern').component;
+
     const root = createRoot(div);
     flushSync(() => {
-        root.render(<InvoiceTemplate data={data} />);
+        root.render(<TemplateComponent data={data} />);
     });
 
     // Wait for render? flushSync should handle it, but images might need load time.
@@ -38,6 +40,11 @@ export const generatePDF = async (data) => {
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+        if (data.returnBlob) {
+            return pdf.output('blob');
+        }
+
         pdf.save(`Invoice-${data.invoiceNumber}.pdf`);
     } catch (error) {
         console.error('Error generating PDF:', error);

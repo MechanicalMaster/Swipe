@@ -4,6 +4,9 @@ import { calculateGST } from '../utils/tax';
 export const useInvoiceStore = create((set, get) => ({
     invoiceNumber: 'INV-1',
     date: new Date().toISOString().split('T')[0],
+    dueDate: new Date().toISOString().split('T')[0],
+    placeOfSupply: '',
+    invoiceCopyType: 'Original for Recipient',
     customer: null,
     items: [],
     invoices: [], // List of all invoices
@@ -38,12 +41,18 @@ export const useInvoiceStore = create((set, get) => ({
 
     setInvoiceNumber: (num) => set({ invoiceNumber: num }),
     setDate: (date) => set({ date }),
+    setDueDate: (date) => set({ dueDate: date }),
+    setPlaceOfSupply: (pos) => set({ placeOfSupply: pos }),
+    setInvoiceCopyType: (type) => set({ invoiceCopyType: type }),
     setCustomer: (customer) => set({ customer }),
 
     setInvoice: (invoice) => set({
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         date: invoice.date,
+        dueDate: invoice.dueDate || invoice.date,
+        placeOfSupply: invoice.placeOfSupply || '',
+        invoiceCopyType: invoice.invoiceCopyType || 'Original for Recipient',
         customer: invoice.customer,
         items: invoice.items,
         details: invoice.details || { reference: '', notes: '', terms: '', extraDiscount: 0, shippingCharges: 0, packagingCharges: 0 },
@@ -67,6 +76,9 @@ export const useInvoiceStore = create((set, get) => ({
         id: null,
         invoiceNumber: 'INV-' + Date.now().toString().slice(-4), // Simple auto-increment simulation
         date: new Date().toISOString().split('T')[0],
+        dueDate: new Date().toISOString().split('T')[0],
+        placeOfSupply: '',
+        invoiceCopyType: 'Original for Recipient',
         customer: null,
         items: [],
         details: { reference: '', notes: '', terms: '', extraDiscount: 0, shippingCharges: 0, packagingCharges: 0 },
@@ -152,7 +164,12 @@ export const useInvoiceStore = create((set, get) => ({
             totalTax,
             total: finalTotal,
             roundOffAmount,
-            rawTotal: total
+            rawTotal: total,
+            // Tax Breakdown (Simplified assumption: Intra-state if no POS or POS matches company state)
+            // In a real app, we'd compare company state vs customer state/POS
+            cgst: totalTax / 2,
+            sgst: totalTax / 2,
+            igst: 0 // Logic to be refined in component or here if we had access to company state
         };
     }
 }));

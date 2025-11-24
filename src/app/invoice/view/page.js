@@ -33,8 +33,10 @@ function InvoiceViewContent() {
         if (!invoice) return;
         try {
             const settings = await db.settings.get('templateId');
+            const company = await db.settings.get('companyDetails');
             const templateId = settings ? settings.value : 'modern';
-            const blob = await generatePDF({ ...invoice, templateId, returnBlob: true });
+            const companyDetails = company ? company.value : {};
+            const blob = await generatePDF({ ...invoice, templateId, companyDetails, returnBlob: true });
             const file = new File([blob], `Invoice-${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
 
             if (navigator.share) {
@@ -59,8 +61,10 @@ function InvoiceViewContent() {
         {
             label: 'View PDF', icon: FiDownload, onClick: async () => {
                 const settings = await db.settings.get('templateId');
+                const company = await db.settings.get('companyDetails');
                 const templateId = settings ? settings.value : 'modern';
-                await generatePDF({ ...invoice, templateId });
+                const companyDetails = company ? company.value : {};
+                await generatePDF({ ...invoice, templateId, companyDetails });
                 setIsMenuOpen(false);
             }
         },
@@ -243,11 +247,19 @@ function InvoiceViewContent() {
                 background: 'white', padding: 16, borderTop: '1px solid #e5e7eb',
                 display: 'flex', gap: 12, overflowX: 'auto'
             }}>
-                <button style={{
-                    flex: 1, padding: '12px', borderRadius: 24, border: '1px solid #e5e7eb',
-                    background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    minWidth: 120
-                }}>
+                <button
+                    onClick={async () => {
+                        const settings = await db.settings.get('templateId');
+                        const company = await db.settings.get('companyDetails');
+                        const templateId = settings ? settings.value : 'modern';
+                        const companyDetails = company ? company.value : {};
+                        await generatePDF({ ...invoice, templateId, companyDetails });
+                    }}
+                    style={{
+                        flex: 1, padding: '12px', borderRadius: 24, border: '1px solid #e5e7eb',
+                        background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        minWidth: 120
+                    }}>
                     <FiDownload /> View PDF
                 </button>
                 <button style={{

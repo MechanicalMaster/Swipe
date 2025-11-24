@@ -14,7 +14,17 @@ export const useSettingsStore = create((set, get) => ({
         alternatePhone: '',
         website: '',
         customFields: [],
-        logo: null
+        logo: null,
+        bankDetails: {
+            bankName: '',
+            accountNumber: '',
+            ifscCode: '',
+            branchName: '',
+            accountHolderName: ''
+        },
+        signatureUrl: null,
+        authorizedSignatoryLabel: 'Authorized Signatory',
+        upiId: ''
     },
     userProfile: {
         name: '',
@@ -54,7 +64,11 @@ export const useSettingsStore = create((set, get) => ({
         await db.delete();
         await db.open();
         set({
-            companyDetails: { name: '', gstin: '', phone: '', email: '', address: '', logo: null },
+            companyDetails: {
+                name: '', gstin: '', phone: '', email: '', address: '', logo: null,
+                bankDetails: { bankName: '', accountNumber: '', ifscCode: '', branchName: '', accountHolderName: '' },
+                signatureUrl: null, authorizedSignatoryLabel: '', upiId: ''
+            },
             userProfile: { name: '', email: '', phone: '' },
             templateId: 'modern'
         });

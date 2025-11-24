@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/lib/store/authStore';
 import styles from './LoginFlow.module.css';
+import LandingPage from '../LandingPage/LandingPage';
 
 export default function LoginFlow() {
     const { currentStep, setStep, phoneNumber, setPhoneNumber, verifyOTP } = useAuthStore();
@@ -40,16 +41,7 @@ export default function LoginFlow() {
     };
 
     if (currentStep === 'welcome') {
-        return (
-            <div className={styles.container}>
-                <div className={styles.logo}>swipe 🇮🇳</div>
-                <h1 className={styles.title}>Welcome to Swipe</h1>
-                <p className={styles.subtitle}>Manage your business on the go</p>
-                <button className={styles.button} onClick={() => setStep('phone')}>
-                    Login / Sign Up
-                </button>
-            </div>
-        );
+        return <LandingPage onGetStarted={() => setStep('phone')} />;
     }
 
     if (currentStep === 'phone') {

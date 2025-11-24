@@ -11,10 +11,11 @@ import styles from './InvoiceForm.module.css';
 export default function InvoiceForm() {
     const router = useRouter();
     const {
-        id, invoiceNumber, date, items, customer,
+        id, invoiceNumber, date, dueDate, placeOfSupply, invoiceCopyType, items, customer,
         details, toggles, payment, roundOff,
         addItem, updateItem, removeItem, calculateTotals,
-        updateDetails, toggleSwitch, updatePayment, toggleRoundOff, resetInvoice
+        updateDetails, toggleSwitch, updatePayment, toggleRoundOff, resetInvoice,
+        setDueDate, setPlaceOfSupply, setInvoiceCopyType
     } = useInvoiceStore();
 
     const totals = calculateTotals();
@@ -26,7 +27,11 @@ export default function InvoiceForm() {
         try {
             const invoiceData = {
                 invoiceNumber,
+                invoiceNumber,
                 date,
+                dueDate,
+                placeOfSupply,
+                invoiceCopyType,
                 customer,
                 items,
                 details,
@@ -79,7 +84,16 @@ export default function InvoiceForm() {
                     <div className={styles.value} style={{ color: 'var(--primary)' }}>Edit</div>
                 </div>
                 <div className={styles.row}>
-                    <div className={styles.label}>{date}</div>
+                    <div className={styles.label}>Date</div>
+                    <input type="date" className={styles.input} value={date} onChange={(e) => useInvoiceStore.getState().setDate(e.target.value)} />
+                </div>
+                <div className={styles.row}>
+                    <div className={styles.label}>Due Date</div>
+                    <input type="date" className={styles.input} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                </div>
+                <div className={styles.row}>
+                    <div className={styles.label}>Place of Supply</div>
+                    <input className={styles.input} placeholder="State" value={placeOfSupply} onChange={(e) => setPlaceOfSupply(e.target.value)} />
                 </div>
             </div>
 

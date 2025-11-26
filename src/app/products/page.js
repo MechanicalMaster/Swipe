@@ -51,24 +51,26 @@ export default function ProductsPage() {
             </div>
 
             {filteredProducts.map((product) => (
-                <div key={product.id} className={styles.productCard} onClick={() => alert(`Edit ${product.name} coming soon`)}>
-                    <div className={styles.productIcon}>
-                        {product.images && product.images.length > 0 ? (
-                            <img src={product.images[0].data} alt="" style={{ width: '100%', height: '100%', borderRadius: 8, objectFit: 'cover' }} />
-                        ) : (
-                            <FiShoppingBag />
-                        )}
-                    </div>
-                    <div className={styles.productInfo}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div>
-                                <div className={styles.stockBadge}>Qty: 0.00</div>
-                                <div className={styles.productName}>{product.name}</div>
+                <Link key={product.id} href={`/products/edit?id=${product.id}`}>
+                    <div className={styles.productCard}>
+                        <div className={styles.productIcon}>
+                            {product.images && product.images.length > 0 ? (
+                                <img src={product.images[0].data} alt="" style={{ width: '100%', height: '100%', borderRadius: 8, objectFit: 'cover' }} />
+                            ) : (
+                                <FiShoppingBag />
+                            )}
+                        </div>
+                        <div className={styles.productInfo}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div>
+                                    <div className={styles.stockBadge}>Qty: 0.00</div>
+                                    <div className={styles.productName}>{product.name}</div>
+                                </div>
+                                <div className={styles.productPrice}>{formatCurrency(product.sellingPrice || 0)}</div>
                             </div>
-                            <div className={styles.productPrice}>{formatCurrency(product.sellingPrice || 0)}</div>
                         </div>
                     </div>
-                </div>
+                </Link>
             ))}
 
             <Link href="/products/add">

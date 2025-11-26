@@ -38,5 +38,17 @@ export const useProductStore = create((set, get) => ({
             console.error('Failed to delete product:', error);
             throw error;
         }
+    },
+
+    updateProduct: async (id, updates) => {
+        try {
+            await db.products.update(id, updates);
+            set((state) => ({
+                products: state.products.map(p => p.id === id ? { ...p, ...updates } : p)
+            }));
+        } catch (error) {
+            console.error('Failed to update product:', error);
+            throw error;
+        }
     }
 }));

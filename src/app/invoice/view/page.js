@@ -11,6 +11,8 @@ import {
     FiCopy, FiClock, FiRefreshCw, FiSettings, FiMail, FiMessageSquare,
     FiTruck, FiFileText, FiXCircle
 } from 'react-icons/fi';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 function InvoiceViewContent() {
     const router = useRouter();
@@ -37,20 +39,60 @@ function InvoiceViewContent() {
             const templateId = settings ? settings.value : 'modern';
             const companyDetails = company ? company.value : {};
             const blob = await generatePDF({ ...invoice, templateId, companyDetails, returnBlob: true });
-            const file = new File([blob], `Invoice-${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
 
-            if (navigator.share) {
-                await navigator.share({
-                    title: `Invoice ${invoice.invoiceNumber}`,
-                    text: `Hello ${invoice.customer.name},\n\nPlease find attached invoice ${invoice.invoiceNumber} from ${invoice.date}.\n\nTotal Amount: ${formatCurrency(invoice.totals.total)}\n\nThank you for your business!`,
-                    files: [file]
-                });
+            // Check if running in Capacitor/Native environment
+            const isNative = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNative;
+
+            if (isNative) {
+                try {
+                    const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = async () => {
+                        const base64data = reader.result;
+                        // Write file to cache directory
+                        const result = await Filesystem.writeFile({
+                            path: fileName,
+                            data: base64data,
+                            directory: Directory.Cache
+                        });
+
+                        // Share the file
+                        await Share.share({
+                            title: `Invoice ${invoice.invoiceNumber}`,
+                            text: `Please find attached invoice ${invoice.invoiceNumber}`,
+                            url: result.uri, // Share the file URI
+                            dialogTitle: 'Send Invoice'
+                        });
+                    };
+                } catch (e) {
+                    console.error('Native share failed', e);
+                    alert('Native share failed: ' + e.message);
+                }
             } else {
-                alert('Sharing is not supported on this device/browser.');
+                // Web Fallback
+                const file = new File([blob], `Invoice-${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
+                if (navigator.share) {
+                    await navigator.share({
+                        title: `Invoice ${invoice.invoiceNumber}`,
+                        text: `Please find attached invoice ${invoice.invoiceNumber}`,
+                        files: [file]
+                    });
+                } else {
+                    // Fallback for desktop browsers that don't support share
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Invoice-${invoice.invoiceNumber}.pdf`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
             }
         } catch (error) {
             console.error('Error sharing:', error);
-            alert('Failed to share invoice');
+            if (error.name !== 'AbortError') {
+                alert('Failed to share invoice');
+            }
         }
     };
 

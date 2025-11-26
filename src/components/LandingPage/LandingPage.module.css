@@ -292,8 +292,8 @@
         flex-direction: column;
     }
 
-    .primaryButton,
-    .secondaryButton {
+    .ctaGroup .primaryButton,
+    .ctaGroup .secondaryButton {
         width: 100%;
     }
 

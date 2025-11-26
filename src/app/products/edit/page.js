@@ -1,21 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
+import { db } from '@/lib/db';
 import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp } from 'react-icons/fi';
-import styles from '../page.module.css';
+import styles from '../page.module.css'; // Reuse styles
 
-export default function AddProductPage() {
+export default function EditProductPage() {
     const router = useRouter();
-    const { addProduct } = useProductStore();
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
+    const { updateProduct } = useProductStore();
+    const [loading, setLoading] = useState(true);
+
     const [formData, setFormData] = useState({
-        type: 'product', // product, service
+        type: 'product',
         name: '',
         sellingPrice: '',
         purchasePrice: '',
-        taxRate: 3, // Default 3% for jewelry usually
-        unit: 'gms', // Default unit
+        taxRate: 3,
+        unit: 'gms',
         hsn: '',
         category: '',
         subCategory: '',
@@ -23,15 +28,15 @@ export default function AddProductPage() {
         description: '',
 
         // Metal Attributes
-        metalType: 'Gold', // Gold, Silver, Platinum
-        metalColor: 'Yellow', // Yellow, White, Rose, Two-tone
-        purity: '22K', // 24K, 22K, 18K, 14K
+        metalType: 'Gold',
+        metalColor: 'Yellow',
+        purity: '22K',
         grossWeight: '',
         netWeight: '',
         wastagePercentage: '',
         wastageWeight: '',
-        makingCharges: '', // per gram or fixed
-        makingChargesType: 'per_gram', // per_gram, fixed
+        makingCharges: '',
+        makingChargesType: 'per_gram',
         metalRateRef: '',
 
         // Gemstone Attributes
@@ -59,7 +64,7 @@ export default function AddProductPage() {
 
         // Taxation & Compliance
         hallmarkCert: '',
-        barcode: '', // Auto-generated if empty
+        barcode: '',
 
         // Optional
         occasion: '',
@@ -72,17 +77,27 @@ export default function AddProductPage() {
         notForSale: false
     });
 
-    const searchParams = useSearchParams();
-    const returnUrl = searchParams.get('returnUrl');
+    useEffect(() => {
+        const loadProduct = async () => {
+            if (!id) return;
+            try {
+                const product = await db.products.get(Number(id));
+                if (product) {
+                    setFormData(prev => ({ ...prev, ...product }));
+                }
+            } catch (error) {
+                console.error('Failed to load product', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadProduct();
+    }, [id]);
 
     const handleSave = async () => {
         if (!formData.name) return alert('Product Name is required');
-        await addProduct(formData);
-        if (returnUrl) {
-            router.push(returnUrl);
-        } else {
-            router.push('/products');
-        }
+        await updateProduct(Number(id), formData);
+        router.back();
     };
 
     const handleImageUpload = (e) => {
@@ -99,12 +114,14 @@ export default function AddProductPage() {
         }
     };
 
+    if (loading) return <div className={styles.container}>Loading...</div>;
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <FiArrowLeft size={24} onClick={() => router.back()} style={{ cursor: 'pointer' }} />
-                    Add Product
+                    Edit Product
                 </div>
                 <FiMoreHorizontal size={24} />
             </div>
@@ -520,7 +537,7 @@ export default function AddProductPage() {
             </div>
 
             <div className={styles.footer}>
-                <button className={styles.saveButton} onClick={handleSave}>Add Product</button>
+                <button className={styles.saveButton} onClick={handleSave}>Update Product</button>
             </div>
         </div>
     );

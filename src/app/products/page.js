@@ -42,13 +42,7 @@ export default function ProductsPage() {
                 />
             </div>
 
-            <div className={styles.banner}>
-                <div>
-                    <div className={styles.bannerTitle}>Item Variants</div>
-                    <div className={styles.bannerText}>Seamlessly integrate various product variants, from sizes to colors.</div>
-                </div>
-                <FiHeadphones size={24} color="#0f172a" />
-            </div>
+
 
             {filteredProducts.map((product) => (
                 <Link key={product.id} href={`/products/edit?id=${product.id}`}>

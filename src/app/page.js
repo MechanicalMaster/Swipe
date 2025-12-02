@@ -70,13 +70,7 @@ export default function Home() {
         </div>
       </section>
 
-      <div className={styles.banner}>
-        <RiRocketLine size={28} color="#2563eb" />
-        <div className={styles.bannerText}>
-          <div className={styles.bannerTitle}>Add company logo to bills</div>
-          <div className={styles.bannerSubtitle}>Get Swipe PRO & grow business 10x!</div>
-        </div>
-      </div>
+
     </div>
   );
 }

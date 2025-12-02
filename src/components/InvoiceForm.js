@@ -91,10 +91,7 @@ export default function InvoiceForm() {
                     <div className={styles.label}>Due Date</div>
                     <input type="date" className={styles.input} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                 </div>
-                <div className={styles.row}>
-                    <div className={styles.label}>Place of Supply</div>
-                    <input className={styles.input} placeholder="State" value={placeOfSupply} onChange={(e) => setPlaceOfSupply(e.target.value)} />
-                </div>
+
             </div>
 
             <div className={styles.sectionTitle}>
@@ -187,11 +184,7 @@ export default function InvoiceForm() {
             <div className={styles.card} style={{ padding: 0 }}>
                 {[
                     { icon: '📄', label: 'Add Reference', field: 'reference', type: 'text' },
-                    { icon: '📝', label: 'Add Notes', field: 'notes', type: 'text' },
                     { icon: '📋', label: 'Add Terms', field: 'terms', type: 'text' },
-                    { icon: '₹', label: 'Add Extra Discount', field: 'extraDiscount', type: 'number' },
-                    { icon: '₹', label: 'Delivery/Shipping Charges', field: 'shippingCharges', type: 'number' },
-                    { icon: '₹', label: 'Packaging Charges', field: 'packagingCharges', type: 'number' },
                 ].map((opt, idx) => (
                     <div key={idx} className={styles.optionalRow}>
                         <div className={styles.optionalLabel}>
@@ -216,22 +209,7 @@ export default function InvoiceForm() {
             </div>
 
             {/* Toggles */}
-            <div className={styles.card}>
-                {['TDS Applicable?', 'TCS Applicable?', 'RCM Applicable?'].map((label, idx) => {
-                    const key = label.split(' ')[0].toLowerCase();
-                    return (
-                        <div key={idx} className={styles.toggleRow}>
-                            <span className={styles.toggleLabel}>{label}</span>
-                            <div
-                                className={`${styles.toggleSwitch} ${toggles[key] ? styles.active : ''}`}
-                                onClick={() => toggleSwitch(key)}
-                            >
-                                <div className={styles.toggleKnob} />
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
+
 
             {/* Payments */}
             <div className={styles.sectionTitle}>Payments</div>

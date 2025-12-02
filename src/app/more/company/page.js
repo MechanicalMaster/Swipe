@@ -29,7 +29,12 @@ export default function CompanyDetailsPage() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        updateCompanyDetails({ [name]: value });
+        if (name === 'phone' || name === 'alternatePhone') {
+            const numericValue = value.replace(/\D/g, '').slice(0, 10);
+            updateCompanyDetails({ [name]: numericValue });
+        } else {
+            updateCompanyDetails({ [name]: value });
+        }
     };
 
     const handleImageSelect = (imageData) => {

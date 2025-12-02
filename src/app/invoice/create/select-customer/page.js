@@ -136,21 +136,7 @@ export default function SelectCustomerPage() {
                 ))}
 
                 {/* Export/SEZ Banner (Static for now as per screenshot design) */}
-                <div style={{
-                    background: '#eff6ff',
-                    padding: '16px',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginTop: '8px'
-                }}>
-                    <div>
-                        <div style={{ fontWeight: 600, color: '#1e3a8a', marginBottom: '4px' }}>Export/SEZ/ Multi currency</div>
-                        <div style={{ fontSize: '12px', color: '#60a5fa' }}>Easily Create your export or multi currency invoices.</div>
-                    </div>
-                    <div style={{ fontSize: '24px' }}>🎧</div>
-                </div>
+
             </div>
         </div>
     );

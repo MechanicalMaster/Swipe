@@ -38,12 +38,21 @@ export default function CustomerEditPage() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === 'phone') {
+            const numericValue = value.replace(/\D/g, '').slice(0, 10);
+            setFormData(prev => ({ ...prev, [name]: numericValue }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSave = async () => {
         if (!formData.name) {
             alert('Name is required');
+            return;
+        }
+        if (formData.phone && formData.phone.length !== 10) {
+            alert('Phone number must be 10 digits');
             return;
         }
         await updateCustomer(parseInt(id), formData);
@@ -91,13 +100,7 @@ export default function CustomerEditPage() {
 
             <div className={styles.content}>
                 {/* Banner */}
-                <div className={styles.banner}>
-                    <div>
-                        <div className={styles.bannerTitle}>Add Custom Fields</div>
-                        <div className={styles.bannerText}>Personalize to perfectly suit your style.</div>
-                    </div>
-                    <FiHeadphones size={24} color="#111827" />
-                </div>
+
 
                 {/* Basic Details */}
                 <div className={styles.section}>
@@ -158,9 +161,8 @@ export default function CustomerEditPage() {
                                 />
                                 <label style={{ position: 'absolute', left: '12px', top: '4px', fontSize: '10px', color: '#6b7280' }}>GST Number</label>
                             </div>
-                            <button className={styles.fetchButton}>Fetch Details</button>
                         </div>
-                        <div className={styles.helperText}>Entering the GSTIN will automatically fetch the company details</div>
+
                     </div>
 
                     <div>

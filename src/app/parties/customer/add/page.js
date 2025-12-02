@@ -52,6 +52,7 @@ export default function AddCustomerPage() {
 
     const handleSave = async () => {
         if (!formData.name) return alert('Name is required');
+        if (formData.phone && formData.phone.length !== 10) return alert('Phone number must be 10 digits');
         const id = await addCustomer(formData);
 
         if (returnUrl) {
@@ -89,7 +90,10 @@ export default function AddCustomerPage() {
                         className={styles.input}
                         placeholder="Enter Phone Number"
                         value={formData.phone}
-                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={e => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                            setFormData({ ...formData, phone: value });
+                        }}
                     />
                 </div>
                 <input

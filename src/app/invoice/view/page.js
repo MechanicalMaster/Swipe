@@ -110,7 +110,7 @@ function InvoiceViewContent() {
                 setIsMenuOpen(false);
             }
         },
-        { label: 'Delivery Challan', icon: FiTruck, onClick: () => alert('Delivery Challan coming soon') },
+
         {
             label: 'Send Bill', icon: FiShare2, onClick: () => {
                 handleShare();
@@ -127,8 +127,7 @@ function InvoiceViewContent() {
         { label: 'Document Settings', icon: FiSettings },
         { label: 'Send Email', icon: FiMail },
         { label: 'Send SMS', icon: FiMessageSquare },
-        { label: 'Create E-way Bill', icon: FiTruck, sub: '(3 free trials left)' },
-        { label: 'Create E-Invoice', icon: FiFileText, sub: '(3 free trials left)', action: true },
+
         { label: 'Cancel Invoice', icon: FiXCircle, danger: true, action: true },
     ];
 
@@ -323,7 +322,7 @@ function InvoiceViewContent() {
             </div>
 
             <BottomSheet isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 24 }}>
                     {menuGridItems.map((item, idx) => (
                         <div key={idx} onClick={item.onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                             <div style={{

@@ -39,5 +39,44 @@ export const usePartyStore = create((set, get) => ({
 
     getCustomer: (id) => {
         return get().customers.find(c => c.id === parseInt(id));
+    },
+
+    addPayment: async (paymentData) => {
+        // paymentData.mode should be 'in' (You Got) or 'out' (You Gave)
+        const mode = paymentData.mode || 'in';
+
+        const customer = get().customers.find(c => c.id === paymentData.customerId);
+        if (customer) {
+            let newBalance = customer.balance || 0;
+            if (mode === 'in') {
+                newBalance -= paymentData.amount;
+            } else {
+                newBalance += paymentData.amount;
+            }
+
+            await db.customers.update(paymentData.customerId, { balance: newBalance });
+
+            // Create transaction record
+            await db.invoices.add({
+                invoiceNumber: (mode === 'in' ? 'PAYIN-' : 'PAYOUT-') + Date.now().toString().slice(-4),
+                date: paymentData.date,
+                dueDate: paymentData.date,
+                customer: { name: customer.name, id: customer.id },
+                items: [],
+                payment: {
+                    isFullyPaid: true,
+                    amountReceived: paymentData.amount,
+                    mode: paymentData.type,
+                    notes: paymentData.notes
+                },
+                totals: { total: paymentData.amount },
+                type: mode === 'in' ? 'payment_in' : 'payment_out',
+                status: 'Paid'
+            });
+
+            // Refresh customers
+            const customers = await db.customers.toArray();
+            set({ customers });
+        }
     }
 }));

@@ -47,3 +47,8 @@ button {
   padding-top: env(safe-area-inset-top);
   min-height: 100vh;
 }
+
+.page-transition-container {
+  width: 100%;
+  overflow-x: hidden;
+}

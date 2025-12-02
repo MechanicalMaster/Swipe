@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { db } from '@/lib/db';
 import { calculateGST } from '../utils/tax';
 
 export const useInvoiceStore = create((set, get) => ({
@@ -131,6 +132,12 @@ export const useInvoiceStore = create((set, get) => ({
         }
         return state;
     }),
+
+    deleteInvoice: async (id) => {
+        await db.invoices.delete(id);
+        const invoices = await db.invoices.toArray();
+        set({ invoices: invoices.reverse() });
+    },
 
     calculateTotals: () => {
         const { items, details, roundOff } = get();

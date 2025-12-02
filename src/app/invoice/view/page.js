@@ -13,6 +13,8 @@ import {
 } from 'react-icons/fi';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import CancelInvoiceModal from '@/components/CancelInvoiceModal';
+import { useInvoiceStore } from '@/lib/store/invoiceStore';
 
 function InvoiceViewContent() {
     const router = useRouter();
@@ -96,6 +98,17 @@ function InvoiceViewContent() {
         }
     };
 
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const { deleteInvoice } = useInvoiceStore();
+
+    const handleCancelInvoice = async (reason) => {
+        if (invoice) {
+            await deleteInvoice(invoice.id);
+            setIsCancelModalOpen(false);
+            router.push('/'); // Redirect to home/dashboard after deletion
+        }
+    };
+
     if (!invoice) return <div style={{ padding: 20 }}>Loading...</div>;
 
     const menuGridItems = [
@@ -128,7 +141,16 @@ function InvoiceViewContent() {
         { label: 'Send Email', icon: FiMail },
         { label: 'Send SMS', icon: FiMessageSquare },
 
-        { label: 'Cancel Invoice', icon: FiXCircle, danger: true, action: true },
+        {
+            label: 'Cancel Invoice',
+            icon: FiXCircle,
+            danger: true,
+            action: true,
+            onClick: () => {
+                setIsMenuOpen(false);
+                setIsCancelModalOpen(true);
+            }
+        },
     ];
 
     return (
@@ -340,7 +362,7 @@ function InvoiceViewContent() {
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     {menuListItems.map((item, idx) => (
                         <div key={idx}
-                            onClick={() => alert(`${item.label} coming soon`)}
+                            onClick={item.onClick || (() => alert(`${item.label} coming soon`))}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 16, padding: '16px 0',
                                 borderBottom: idx < menuListItems.length - 1 ? '1px solid #f3f4f6' : 'none',
@@ -368,6 +390,12 @@ function InvoiceViewContent() {
                     ))}
                 </div>
             </BottomSheet>
+
+            <CancelInvoiceModal
+                isOpen={isCancelModalOpen}
+                onClose={() => setIsCancelModalOpen(false)}
+                onConfirm={handleCancelInvoice}
+            />
         </div>
     );
 }

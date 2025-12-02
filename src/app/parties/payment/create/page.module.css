@@ -1,0 +1,327 @@
+.container {
+    background-color: #f9fafb;
+    min-height: 100vh;
+    padding-bottom: 100px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.header {
+    background-color: white;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.headerTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.headerSubtitle {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.content {
+    padding: 16px;
+}
+
+.sectionTitle {
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.sectionTitleBold {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 16px;
+}
+
+.inputGroup {
+    margin-bottom: 20px;
+}
+
+.label {
+    font-size: 14px;
+    color: #4b5563;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.resetLink {
+    font-size: 12px;
+    color: #ef4444;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.amountInputContainer {
+    position: relative;
+    background: white;
+    border: 1px solid #16a34a;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.currencySymbol {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin-right: 4px;
+}
+
+.amountInput {
+    border: none;
+    outline: none;
+    font-size: 20px;
+    font-weight: 600;
+    width: 100%;
+    color: #111827;
+}
+
+.pendingText {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+
+.dateInputContainer {
+    position: relative;
+}
+
+.dateInput {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    color: #111827;
+    outline: none;
+}
+
+.calendarIcon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    pointer-events: none;
+}
+
+.chipContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+}
+
+.activeChip {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.checkIcon {
+    font-size: 12px;
+}
+
+.addNewButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #e5e7eb;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+}
+
+.textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 24px 0;
+}
+
+.attachmentButtons {
+    display: flex;
+    gap: 12px;
+}
+
+.attachmentButton {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    padding: 12px;
+    border-radius: 8px;
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.toggleGroup {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.toggleLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.toggleSubLabel {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Switch Styles */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #16a34a;
+}
+
+input:checked+.slider:before {
+    transform: translateX(20px);
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 16px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.footerAmount {
+    flex: 1;
+}
+
+.footerLabel {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.footerValue {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.recordButton {
+    background: #16a34a;
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.bankButton {
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.cancelButton {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    cursor: pointer;
+    padding: 12px;
+    text-decoration: underline;
+}

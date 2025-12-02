@@ -1,7 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
+import { usePartyStore } from '@/lib/store/partyStore';
+import { useEffect } from 'react';
 import { formatCurrency } from '@/lib/utils/tax';
 import { db } from '@/lib/db';
 import { generatePDF } from '@/lib/utils/pdf';
@@ -10,13 +12,24 @@ import styles from './InvoiceForm.module.css';
 
 export default function InvoiceForm() {
     const router = useRouter();
+    const searchParams = useSearchParams(); // Need to import this
+    const prefillCustomerId = searchParams?.get('customerId');
+    const { getCustomer } = usePartyStore(); // Need to import this
+
     const {
         id, invoiceNumber, date, dueDate, placeOfSupply, invoiceCopyType, items, customer,
         details, toggles, payment, roundOff,
         addItem, updateItem, removeItem, calculateTotals,
         updateDetails, toggleSwitch, updatePayment, toggleRoundOff, resetInvoice,
-        setDueDate, setPlaceOfSupply, setInvoiceCopyType
+        setDueDate, setPlaceOfSupply, setInvoiceCopyType, setCustomer
     } = useInvoiceStore();
+
+    useEffect(() => {
+        if (prefillCustomerId && !customer) {
+            const c = getCustomer(prefillCustomerId);
+            if (c) setCustomer(c);
+        }
+    }, [prefillCustomerId, customer, getCustomer, setCustomer]);
 
     const totals = calculateTotals();
 

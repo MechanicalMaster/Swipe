@@ -1,11 +1,18 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { ANIMATIONS } from '@/lib/animations';
 
 export const TransactionCard = ({ transaction, onClick }) => {
     const isCredit = transaction.type === 'credit' || transaction.type === 'payment';
     const amount = parseFloat(transaction.amount || 0);
 
     return (
-        <div
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: ANIMATIONS.duration.fast }}
             onClick={onClick}
             style={{
                 background: 'white',
@@ -52,6 +59,6 @@ export const TransactionCard = ({ transaction, onClick }) => {
                     ₹ {transaction.balance?.toFixed(2) || '0.00'}
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };

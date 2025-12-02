@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { usePartyStore } from '@/lib/store/partyStore';
 import { FiArrowLeft, FiMoreHorizontal, FiHeadphones, FiPlayCircle, FiPlusCircle, FiCopy, FiChevronDown } from 'react-icons/fi';
 import { AddressBottomSheet } from '@/components/AddressBottomSheet';
+import AnimatedButton from '@/components/AnimatedButton';
 import styles from './page.module.css';
 
 export default function CustomerEditPage() {
@@ -208,9 +209,9 @@ export default function CustomerEditPage() {
                     </div>
                 </div>
 
-                <button className={styles.updateButton} onClick={handleSave}>
+                <AnimatedButton className={styles.updateButton} onClick={handleSave}>
                     Update Customer
-                </button>
+                </AnimatedButton>
             </div>
 
             <AddressBottomSheet

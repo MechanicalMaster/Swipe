@@ -133,7 +133,101 @@ export const useInvoiceStore = create((set, get) => ({
         return state;
     }),
 
+    saveInvoice: async () => {
+        const state = get();
+        const { invoiceNumber, date, dueDate, placeOfSupply, invoiceCopyType, customer, items, details, toggles, payment, id } = state;
+
+        if (!customer) throw new Error('Customer is required');
+
+        // Calculate totals dynamically to ensure accuracy and avoid undefined state
+        const totals = state.calculateTotals();
+
+        const balanceDue = totals.total - (payment.amountReceived || 0);
+        const status = balanceDue <= 0 ? 'Paid' : (payment.amountReceived > 0 ? 'Partial' : 'Unpaid');
+
+        const invoiceData = {
+            invoiceNumber,
+            date,
+            dueDate,
+            placeOfSupply,
+            invoiceCopyType,
+            customerId: customer.id,
+            customer: { name: customer.name, id: customer.id, phone: customer.phone }, // Snapshot
+            items,
+            details,
+            toggles,
+            totals,
+            status,
+            balanceDue,
+            updatedAt: new Date().toISOString()
+        };
+
+        return await db.transaction('rw', db.invoices, db.payments, db.payment_allocations, db.customers, async () => {
+            let invoiceId = id;
+
+            if (id) {
+                await db.invoices.update(id, invoiceData);
+            } else {
+                invoiceId = await db.invoices.add({ ...invoiceData, createdAt: new Date().toISOString() });
+            }
+
+            // Handle Payment if exists and is new (logic for editing payments is complex, assuming new invoice for now)
+            // For now, we only create payment record if it's a NEW invoice and amount > 0. 
+            // Editing invoice payment logic is tricky without tracking previous payments.
+            // We will assume this is primarily for creation.
+            if (!id && payment.amountReceived > 0) {
+                const paymentId = await db.payments.add({
+                    transactionNumber: 'PAYIN-' + Date.now().toString().slice(-4),
+                    date: date,
+                    type: 'IN',
+                    partyType: 'CUSTOMER',
+                    partyId: customer.id,
+                    amount: Number(payment.amountReceived),
+                    mode: payment.mode,
+                    notes: payment.notes,
+                    createdAt: new Date().toISOString()
+                });
+
+                await db.payment_allocations.add({
+                    paymentId,
+                    invoiceId,
+                    amount: Number(payment.amountReceived)
+                });
+
+                // Update Customer Balance
+                // We need to fetch current balance first to be safe, or just use atomic update if Dexie supports it (it doesn't for complex math).
+                const currentCustomer = await db.customers.get(customer.id);
+                if (currentCustomer) {
+                    // Invoice increases balance (debit), Payment decreases it (credit)
+                    // Net change = Invoice Total - Payment Amount
+                    // Wait, usually:
+                    // Balance = Receivable.
+                    // Invoice created -> Balance increases by Total.
+                    // Payment received -> Balance decreases by Amount.
+                    // So net change = Total - Amount.
+                    const newBalance = (currentCustomer.balance || 0) + totals.total - Number(payment.amountReceived);
+                    await db.customers.update(customer.id, { balance: newBalance });
+                }
+            } else if (!id) {
+                // Only Invoice created, no payment
+                const currentCustomer = await db.customers.get(customer.id);
+                if (currentCustomer) {
+                    const newBalance = (currentCustomer.balance || 0) + totals.total;
+                    await db.customers.update(customer.id, { balance: newBalance });
+                }
+            }
+
+            // Reload invoices
+            const invoices = await db.invoices.toArray();
+            set({ invoices: invoices.reverse() });
+
+            return invoiceId;
+        });
+    },
+
     deleteInvoice: async (id) => {
+        // TODO: Handle reversing balance changes and deleting linked payments?
+        // For now, simple delete to match previous behavior, but we should warn user.
         await db.invoices.delete(id);
         const invoices = await db.invoices.toArray();
         set({ invoices: invoices.reverse() });

@@ -1,0 +1,399 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+}
+
+.backButton {
+    background: none;
+    border: none;
+    font-size: 24px;
+    margin-right: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000;
+}
+
+.playButton {
+    color: #d32f2f;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 12px;
+    color: #666;
+    margin-left: 4px;
+}
+
+.input {
+    padding: 12px 16px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #f5f5f5;
+    outline: none;
+}
+
+.input:focus {
+    background-color: #fff;
+    border-color: #2962ff;
+}
+
+.dateInputContainer {
+    position: relative;
+}
+
+.calendarIcon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #2962ff;
+    pointer-events: none;
+}
+
+.selectButton {
+    padding: 12px 16px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #f5f5f5;
+    color: #666;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.selectButton.selected {
+    color: #000;
+}
+
+.toggleContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toggleLabel {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.toggleSwitch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.toggleSwitch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #2962ff;
+}
+
+input:checked+.slider:before {
+    transform: translateX(24px);
+}
+
+.paymentTypes {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.paymentType {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    background-color: #eee;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.paymentType.active {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    font-weight: 500;
+}
+
+.checkIcon {
+    font-size: 12px;
+}
+
+.textArea {
+    padding: 12px 16px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #fff;
+    outline: none;
+    min-height: 100px;
+    resize: none;
+}
+
+.attachmentButtons {
+    display: flex;
+    gap: 16px;
+}
+
+.attachButton {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background-color: #fff;
+    color: #2962ff;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.footer {
+    padding: 16px;
+    background-color: #fff;
+    border-top: 1px solid #eee;
+}
+
+.createButton {
+    width: 100%;
+    padding: 14px;
+    background-color: #2962ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Modal Styles */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-end;
+    z-index: 1000;
+}
+
+.modalContent {
+    background-color: #fff;
+    width: 100%;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.modalHeader {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+}
+
+.modalTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+}
+
+.modalBody {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modalSearch {
+    display: flex;
+    align-items: center;
+    background-color: #f5f5f5;
+    padding: 10px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.modalSearchInput {
+    border: none;
+    background: none;
+    outline: none;
+    flex: 1;
+    margin-left: 8px;
+    font-size: 14px;
+}
+
+.categoryList {
+    display: flex;
+    flex-direction: column;
+}
+
+.categoryItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f5f5f5;
+    cursor: pointer;
+}
+
+.categoryName {
+    font-size: 16px;
+    color: #333;
+}
+
+.editIcon {
+    color: #666;
+    font-size: 16px;
+}
+
+.modalFooter {
+    padding: 16px;
+    border-top: 1px solid #eee;
+}
+
+.addCategoryButton {
+    width: 100%;
+    padding: 14px;
+    background-color: #2962ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.deleteButton {
+    flex: 1;
+    padding: 14px;
+    background-color: #d32f2f;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.saveButton {
+    flex: 1;
+    padding: 14px;
+    background-color: #2962ff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.modalActions {
+    display: flex;
+    gap: 16px;
+}

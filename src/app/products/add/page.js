@@ -16,7 +16,7 @@ export default function AddProductPage() {
         purchasePrice: '',
         taxRate: 3, // Default 3% for jewelry usually
         unit: 'gms', // Default unit
-        hsn: '',
+        unit: 'gms', // Default unit
         category: '',
         subCategory: '',
         sku: '',
@@ -62,10 +62,7 @@ export default function AddProductPage() {
         barcode: '', // Auto-generated if empty
 
         // Optional
-        occasion: '',
-        collection: '',
         launchDate: '',
-        tags: '',
 
         images: [],
         showOnline: true,
@@ -423,13 +420,6 @@ export default function AddProductPage() {
             <div className={styles.sectionTitle}>Taxation & Compliance</div>
             <div className={styles.card}>
                 <div style={{ display: 'flex', gap: 12 }}>
-                    <input
-                        className={styles.input}
-                        placeholder="HSN Code"
-                        value={formData.hsn}
-                        onChange={e => setFormData({ ...formData, hsn: e.target.value })}
-                        style={{ flex: 1 }}
-                    />
                     <select
                         className={styles.select}
                         value={formData.taxRate}
@@ -482,24 +472,6 @@ export default function AddProductPage() {
             {/* Optional Metadata */}
             <div className={styles.sectionTitle}>Optional Details</div>
             <div className={styles.card}>
-                <input
-                    className={styles.input}
-                    placeholder="Occasion (Wedding, Daily...)"
-                    value={formData.occasion}
-                    onChange={e => setFormData({ ...formData, occasion: e.target.value })}
-                />
-                <input
-                    className={styles.input}
-                    placeholder="Collection Name"
-                    value={formData.collection}
-                    onChange={e => setFormData({ ...formData, collection: e.target.value })}
-                />
-                <input
-                    className={styles.input}
-                    placeholder="Tags (Comma separated)"
-                    value={formData.tags}
-                    onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                />
 
                 <div className={styles.toggleRow} style={{ marginTop: 12, borderTop: '1px solid #f3f4f6', paddingTop: 12 }}>
                     <span className={styles.toggleLabel}>Show in online store</span>

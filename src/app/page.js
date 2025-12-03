@@ -14,7 +14,7 @@ const createItems = [
   { name: 'Delivery Challan', icon: RiTruckLine, href: '/coming-soon' },
   { name: 'Credit Note', icon: RiArrowGoBackLine, href: '/coming-soon' },
   { name: 'Purchase Order', icon: RiArchiveLine, href: '/coming-soon' },
-  { name: 'Expenses', icon: RiWallet3Line, href: '/coming-soon' },
+  { name: 'Expenses', icon: RiWallet3Line, href: '/more/bills/expenses/create' },
   { name: 'Pro Forma Invoice', icon: RiCalculatorLine, href: '/coming-soon' },
 ];
 
@@ -22,7 +22,7 @@ const quickAccessItems = [
   { name: 'E-way Bill', icon: RiCarLine, href: '/coming-soon' },
   { name: 'E-Invoice', icon: RiFilePaper2Line, href: '/coming-soon' },
   { name: 'Payments Timeline', icon: RiSecurePaymentLine, href: '/coming-soon' },
-  { name: 'Reports', icon: RiPieChartLine, href: '/coming-soon' },
+  { name: 'Reports', icon: RiPieChartLine, href: '/reports' },
   { name: 'Insights', icon: RiLineChartLine, href: '/coming-soon' },
   { name: 'Refer & Get ₹1000', icon: RiMoneyDollarCircleLine, href: '/coming-soon' },
   { name: 'Invoice Templates', icon: RiFileList3Line, href: '/coming-soon' },

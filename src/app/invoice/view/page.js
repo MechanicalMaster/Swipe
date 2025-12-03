@@ -247,19 +247,19 @@ function InvoiceViewContent() {
                 {/* Payments */}
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#374151' }}>Payments</div>
                 <div style={{ background: 'white', padding: 16, borderRadius: 12, marginBottom: 16 }}>
-                    {invoice.payment.amountReceived > 0 ? (
+                    {invoice.payment?.amountReceived > 0 ? (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <span style={{ fontWeight: 600 }}>{invoice.date}</span>
                                     <span style={{ background: '#dcfce7', color: '#166534', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
-                                        {invoice.payment.mode}
+                                        {invoice.payment?.mode}
                                     </span>
                                 </div>
                                 <div style={{ fontSize: 12, color: '#6b7280' }}>PAYIN-1</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontWeight: 600 }}>{formatCurrency(invoice.payment.amountReceived)}</div>
+                                <div style={{ fontWeight: 600 }}>{formatCurrency(invoice.payment?.amountReceived || 0)}</div>
                                 <button style={{
                                     background: '#2563eb', color: 'white', border: 'none',
                                     padding: '4px 8px', borderRadius: 4, fontSize: 10, marginTop: 4

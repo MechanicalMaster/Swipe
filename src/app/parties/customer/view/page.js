@@ -1,5 +1,6 @@
 'use client';
 
+import { db } from '@/lib/db';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePartyStore } from '@/lib/store/partyStore';
@@ -117,29 +118,61 @@ function CustomerLedgerContent() {
     }, [id]);
 
     useEffect(() => {
-        if (customer && invoices.length > 0) {
-            // Filter invoices and payments for this customer
-            const customerRecords = invoices.filter(inv =>
-                inv.customer?.name === customer.name ||
-                (inv.customer?.id === customer.id)
-            );
+        const loadData = async () => {
+            if (customer) {
+                // Get Invoices and Legacy Payments from 'invoices' table
+                const allInvoiceRecords = invoices.filter(inv =>
+                    inv.customerId === customer.id || inv.customer?.id === customer.id
+                );
 
-            const txs = customerRecords.map(inv => ({
-                id: inv.id,
-                date: inv.date,
-                type: inv.type || 'invoice', // 'invoice', 'payment_in', 'payment_out'
-                number: inv.invoiceNumber,
-                amount: inv.totals?.total || inv.total || 0,
-                status: inv.status || 'pending',
-                balance: (inv.type === 'payment_in' || inv.type === 'payment_out') ? 0 : (inv.total || inv.totals?.total),
-                data: inv
-            }));
+                const realInvoices = allInvoiceRecords.filter(inv => !inv.type || inv.type === 'invoice');
+                const legacyPayments = allInvoiceRecords.filter(inv => inv.type === 'payment_in' || inv.type === 'payment_out');
 
-            // Sort by date descending
-            txs.sort((a, b) => new Date(b.date) - new Date(a.date));
+                // Get New Payments from 'payments' table
+                const newPayments = await db.payments.where('partyId').equals(customer.id).toArray();
 
-            setTransactions(txs);
-        }
+                const invoiceTxs = realInvoices.map(inv => ({
+                    id: `inv-${inv.id}`,
+                    date: inv.date,
+                    type: 'invoice',
+                    number: inv.invoiceNumber,
+                    amount: inv.totals?.total || 0,
+                    status: inv.status || 'Unpaid',
+                    balance: inv.balanceDue !== undefined ? inv.balanceDue : (inv.totals?.total || 0),
+                    data: inv
+                }));
+
+                const legacyPaymentTxs = legacyPayments.map(pay => ({
+                    id: `inv-${pay.id}`,
+                    date: pay.date,
+                    type: pay.type, // 'payment_in' or 'payment_out'
+                    number: pay.invoiceNumber,
+                    amount: pay.totals?.total || 0,
+                    status: 'Paid',
+                    balance: 0,
+                    data: pay
+                }));
+
+                const newPaymentTxs = newPayments.map(pay => ({
+                    id: `pay-${pay.id}`,
+                    date: pay.date,
+                    type: pay.type === 'IN' ? 'payment_in' : 'payment_out',
+                    number: pay.transactionNumber,
+                    amount: pay.amount,
+                    status: 'Paid',
+                    balance: 0,
+                    data: pay
+                }));
+
+                const allTxs = [...invoiceTxs, ...legacyPaymentTxs, ...newPaymentTxs];
+
+                // Sort by date descending
+                allTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                setTransactions(allTxs);
+            }
+        };
+        loadData();
     }, [customer, invoices]);
 
     if (!customer) return <div>Loading...</div>;

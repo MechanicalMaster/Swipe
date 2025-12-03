@@ -54,27 +54,23 @@ export const usePartyStore = create((set, get) => ({
                 newBalance += paymentData.amount;
             }
 
+            // Update customer balance
             await db.customers.update(paymentData.customerId, { balance: newBalance });
 
-            // Create transaction record
-            await db.invoices.add({
-                invoiceNumber: (mode === 'in' ? 'PAYIN-' : 'PAYOUT-') + Date.now().toString().slice(-4),
+            // Create payment record in new table
+            await db.payments.add({
+                transactionNumber: (mode === 'in' ? 'PAYIN-' : 'PAYOUT-') + Date.now().toString().slice(-4),
                 date: paymentData.date,
-                dueDate: paymentData.date,
-                customer: { name: customer.name, id: customer.id },
-                items: [],
-                payment: {
-                    isFullyPaid: true,
-                    amountReceived: paymentData.amount,
-                    mode: paymentData.type,
-                    notes: paymentData.notes
-                },
-                totals: { total: paymentData.amount },
-                type: mode === 'in' ? 'payment_in' : 'payment_out',
-                status: 'Paid'
+                type: mode === 'in' ? 'IN' : 'OUT',
+                partyType: 'CUSTOMER',
+                partyId: paymentData.customerId,
+                amount: paymentData.amount,
+                mode: paymentData.type || 'CASH', // 'CASH', 'UPI', etc.
+                notes: paymentData.notes,
+                createdAt: new Date().toISOString()
             });
 
-            // Refresh customers
+            // Refresh customers to show new balance
             const customers = await db.customers.toArray();
             set({ customers });
         }

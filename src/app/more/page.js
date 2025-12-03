@@ -16,6 +16,12 @@ const menuItems = [
         ]
     },
     {
+        title: 'Bills',
+        items: [
+            { label: 'Expenses', icon: FiCreditCard, href: '/more/bills/expenses' },
+        ]
+    },
+    {
         title: 'Settings',
         items: [
             { label: 'Document Settings', icon: FiFileText, href: '/coming-soon' },

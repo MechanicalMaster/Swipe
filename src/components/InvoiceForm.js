@@ -20,7 +20,7 @@ export default function InvoiceForm() {
         id, invoiceNumber, date, dueDate, placeOfSupply, invoiceCopyType, items, customer,
         details, toggles, payment, roundOff,
         addItem, updateItem, removeItem, calculateTotals,
-        updateDetails, toggleSwitch, updatePayment, toggleRoundOff, resetInvoice,
+        updateDetails, toggleSwitch, updatePayment, toggleRoundOff, resetInvoice, saveInvoice,
         setDueDate, setPlaceOfSupply, setInvoiceCopyType, setCustomer
     } = useInvoiceStore();
 
@@ -38,42 +38,12 @@ export default function InvoiceForm() {
         if (items.length === 0) return alert('Please add at least one item');
 
         try {
-            const invoiceData = {
-                invoiceNumber,
-                invoiceNumber,
-                date,
-                dueDate,
-                placeOfSupply,
-                invoiceCopyType,
-                customer,
-                items,
-                details,
-                toggles,
-                payment,
-                totals,
-                status: payment.isFullyPaid ? 'Paid' : 'Unpaid',
-                updatedAt: new Date()
-            };
-
-            let savedId;
-            if (id) {
-                // Update existing
-                await db.invoices.put({ ...invoiceData, id, createdAt: new Date() }); // Keep original createdAt if possible, but for now just put. 
-                // To keep original createdAt, we should have fetched it. 
-                // Ideally setInvoice should have stored createdAt too.
-                // For simplicity, let's assume we might overwrite createdAt or we should have stored it.
-                // Let's just put.
-                savedId = id;
-            } else {
-                // Create new
-                savedId = await db.invoices.add({ ...invoiceData, createdAt: new Date() });
-            }
-
+            const savedId = await saveInvoice();
             resetInvoice(); // Clear form
             router.push(`/invoice/view?id=${savedId}`);
         } catch (error) {
             console.error('Failed to save invoice:', error);
-            alert('Failed to save invoice');
+            alert('Failed to save invoice: ' + error.message);
         }
     };
 

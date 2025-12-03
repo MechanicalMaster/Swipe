@@ -29,6 +29,7 @@ export default function PurchaseForm() {
                 items,
                 totals,
                 status: 'Unpaid',
+                balanceDue: totals.total,
                 createdAt: new Date()
             });
             alert('Purchase saved successfully!');

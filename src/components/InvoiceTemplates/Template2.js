@@ -93,18 +93,33 @@ export const Template2 = ({ data }) => {
                 </thead>
                 <tbody>
                     {items.map((item, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                            <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>{index + 1}</td>
-                            <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
-                                <div style={{ fontWeight: 600, marginBottom: '4px' }}>{item.name}</div>
-                                {/* Placeholder for description if we had it */}
-                                {/* <div style={{ fontSize: '10px', color: '#6b7280' }}>Adjustable armrest, Carbon blue...</div> */}
-                            </td>
-                            <td style={{ padding: '12px 10px', textAlign: 'center', verticalAlign: 'top' }}>{item.hsn || '-'}</td>
-                            <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top' }}>{formatCurrency(item.rate)}</td>
-                            <td style={{ padding: '12px 10px', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity}</td>
-                            <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: 600 }}>{formatCurrency(item.quantity * item.rate)}</td>
-                        </tr>
+                        <React.Fragment key={index}>
+                            <tr style={{ borderBottom: (item.netWeight || item.makingChargePerGram) ? 'none' : '1px solid #e5e7eb' }}>
+                                <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>{index + 1}</td>
+                                <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
+                                    <div style={{ fontWeight: 600, marginBottom: '4px' }}>{item.name}</div>
+                                </td>
+                                <td style={{ padding: '12px 10px', textAlign: 'center', verticalAlign: 'top' }}>{item.hsn || '-'}</td>
+                                <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top' }}>{formatCurrency(item.rate)}</td>
+                                <td style={{ padding: '12px 10px', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity}</td>
+                                <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: 600 }}>{formatCurrency(item.quantity * item.rate)}</td>
+                            </tr>
+                            {/* Jewellery Detail Row */}
+                            {(item.netWeight || item.makingChargePerGram) > 0 && (
+                                <tr style={{ borderBottom: '1px solid #e5e7eb', fontSize: '10px', color: '#1f2937', background: '#F7F7F7' }}>
+                                    <td colSpan={6} style={{ padding: '8px 12px 8px 12px' }}>
+                                        <div style={{ display: 'flex', gap: '8px 16px', flexWrap: 'wrap', marginLeft: '32px' }}>
+                                            <span><strong>Gross Wt:</strong> {item.grossWeight || 0}g</span>
+                                            <span><strong>Net Wt:</strong> {item.netWeight || 0}g</span>
+                                            <span><strong>Rate/gm:</strong> {formatCurrency(item.ratePerGram || 0)}</span>
+                                            <span><strong>MC/gm:</strong> {formatCurrency(item.makingChargePerGram || 0)}</span>
+                                            <span><strong>Mat. Val.:</strong> {formatCurrency(item.materialValue || 0)}</span>
+                                            <span><strong>Making Chg:</strong> {formatCurrency(item.makingCharge || 0)}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
                     ))}
                     {/* Empty rows filler if needed, but keeping it dynamic is better */}
                 </tbody>
@@ -132,11 +147,11 @@ export const Template2 = ({ data }) => {
                     ) : (
                         <>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                                <span>CGST {totals.cgst > 0 ? '9.0%' : ''}</span>
+                                <span>CGST (1.5%)</span>
                                 <span>{formatCurrency(totals.cgst)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                                <span>SGST {totals.sgst > 0 ? '9.0%' : ''}</span>
+                                <span>SGST (1.5%)</span>
                                 <span>{formatCurrency(totals.sgst)}</span>
                             </div>
                         </>

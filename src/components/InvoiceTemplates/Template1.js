@@ -85,17 +85,33 @@ export const Template1 = ({ data }) => {
                 </thead>
                 <tbody>
                     {items.map((item, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                            <td style={{ padding: '8px' }}>{index + 1}</td>
-                            <td style={{ padding: '8px' }}>
-                                <div style={{ fontWeight: 600 }}>{item.name}</div>
-                                {/* Placeholder for sub-details if we add them later */}
-                            </td>
-                            <td style={{ padding: '8px', textAlign: 'center' }}>{item.hsn || '-'}</td>
-                            <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.rate)}</td>
-                            <td style={{ padding: '8px', textAlign: 'center' }}>{item.quantity}</td>
-                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(item.quantity * item.rate)}</td>
-                        </tr>
+                        <React.Fragment key={index}>
+                            <tr style={{ borderBottom: (item.netWeight || item.makingChargePerGram) ? 'none' : '1px solid #e5e7eb' }}>
+                                <td style={{ padding: '8px' }}>{index + 1}</td>
+                                <td style={{ padding: '8px' }}>
+                                    <div style={{ fontWeight: 600 }}>{item.name}</div>
+                                </td>
+                                <td style={{ padding: '8px', textAlign: 'center' }}>{item.hsn || '-'}</td>
+                                <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.rate)}</td>
+                                <td style={{ padding: '8px', textAlign: 'center' }}>{item.quantity}</td>
+                                <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(item.quantity * item.rate)}</td>
+                            </tr>
+                            {/* Jewellery Detail Row */}
+                            {(item.netWeight || item.makingChargePerGram) > 0 && (
+                                <tr style={{ borderBottom: '1px solid #e5e7eb', fontSize: '10px', color: '#1f2937', background: '#F7F7F7' }}>
+                                    <td colSpan={6} style={{ padding: '8px 12px 8px 12px' }}>
+                                        <div style={{ display: 'flex', gap: '8px 16px', flexWrap: 'wrap', marginLeft: '32px' }}>
+                                            <span><strong>Gross Wt:</strong> {item.grossWeight || 0}g</span>
+                                            <span><strong>Net Wt:</strong> {item.netWeight || 0}g</span>
+                                            <span><strong>Rate/gm:</strong> {formatCurrency(item.ratePerGram || 0)}</span>
+                                            <span><strong>MC/gm:</strong> {formatCurrency(item.makingChargePerGram || 0)}</span>
+                                            <span><strong>Mat. Val.:</strong> {formatCurrency(item.materialValue || 0)}</span>
+                                            <span><strong>Making Chg:</strong> {formatCurrency(item.makingCharge || 0)}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
                     ))}
                 </tbody>
             </table>
@@ -119,11 +135,11 @@ export const Template1 = ({ data }) => {
                     ) : (
                         <>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
-                                <span>CGST</span>
+                                <span>CGST (1.5%)</span>
                                 <span>{formatCurrency(totals.cgst)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
-                                <span>SGST</span>
+                                <span>SGST (1.5%)</span>
                                 <span>{formatCurrency(totals.sgst)}</span>
                             </div>
                         </>

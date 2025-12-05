@@ -2,7 +2,7 @@ import Dexie from 'dexie';
 
 export const db = new Dexie('SwipeInvoiceDB');
 
-db.version(5).stores({
+db.version(7).stores({
   invoices: '++id, invoiceNumber, date, customerId, status, balanceDue',
   purchases: '++id, purchaseNumber, date, vendorId, status, balanceDue',
   customers: '++id, name, gstin, phone, email, isDeleted',
@@ -11,6 +11,9 @@ db.version(5).stores({
   payments: '++id, transactionNumber, date, type, partyType, partyId',
   payment_allocations: '++id, paymentId, invoiceId',
   audit_logs: '++id, entityType, entityId, action, timestamp',
+  categories: '++id, name, type',
+  subCategories: '++id, name, categoryId',
+  sequences: 'key', // value
   settings: 'key'
 });
 

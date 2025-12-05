@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useSettingsStore } from '@/lib/store/settingsStore';
-import { FiUser, FiSettings, FiChevronRight, FiBriefcase, FiUsers, FiFileText, FiCreditCard, FiEdit3, FiBookOpen } from 'react-icons/fi';
+import { FiUser, FiSettings, FiChevronRight, FiBriefcase, FiUsers, FiFileText, FiCreditCard, FiEdit3, FiBookOpen, FiBox } from 'react-icons/fi';
 import styles from './page.module.css';
 
 const menuItems = [
@@ -19,6 +19,12 @@ const menuItems = [
         title: 'Bills',
         items: [
             { label: 'Expenses', icon: FiCreditCard, href: '/more/bills/expenses' },
+        ]
+    },
+    {
+        title: 'Masters',
+        items: [
+            { label: 'Product Master', icon: FiBox, href: '/more/masters/products' },
         ]
     },
     {

@@ -115,6 +115,7 @@ export default function InvoiceForm() {
             <div className={styles.sectionTitle}>
                 Products <FiBox size={14} />
             </div>
+            {/* Products List with Jewellery Fields */}
             <div className={styles.card}>
                 <button
                     className={styles.addButton}
@@ -124,40 +125,110 @@ export default function InvoiceForm() {
                     <FiPlus /> Select Products
                 </button>
                 {items.map((item) => (
-                    <div key={item.id} className={styles.itemRow}>
-                        <div className={styles.itemHeader}>
-                            <input
-                                className={styles.input}
-                                placeholder="Item Name"
-                                value={item.name}
-                                onChange={(e) => updateItem(item.id, 'name', e.target.value)}
-                            />
-                            <button onClick={() => removeItem(item.id)} style={{ color: 'red' }}>
+                    <div key={item.id} className={styles.itemRow} style={{ borderBottom: '1px solid #f3f4f6', paddingBottom: 16 }}>
+                        <div className={styles.itemHeader} style={{ marginBottom: 8, justifyContent: 'space-between' }}>
+                            <div style={{ fontWeight: 600 }}>{item.name}</div>
+                            <button onClick={() => removeItem(item.id)} style={{ color: 'red', border: 'none', background: 'none' }}>
                                 <FiTrash2 />
                             </button>
                         </div>
-                        <div className={styles.itemInputs}>
-                            <input
-                                type="number"
-                                className={styles.input}
-                                placeholder="Qty"
-                                value={item.quantity}
-                                onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
-                            />
-                            <input
-                                type="number"
-                                className={styles.input}
-                                placeholder="Rate"
-                                value={item.rate}
-                                onChange={(e) => updateItem(item.id, 'rate', Number(e.target.value))}
-                            />
-                            <div className={styles.value}>
-                                {formatCurrency(item.quantity * item.rate)}
+
+                        {/* Row 1: Weights (Read Only) */}
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 10, color: '#6b7280' }}>Gross Wt</label>
+                                <input
+                                    className={styles.input}
+                                    value={item.grossWeight || ''}
+                                    readOnly
+                                    placeholder="0"
+                                    style={{ background: '#f9fafb' }}
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 10, color: '#6b7280' }}>Net Wt (g)</label>
+                                <input
+                                    className={styles.input}
+                                    type="number"
+                                    value={item.netWeight || ''}
+                                    onChange={(e) => updateItem(item.id, 'netWeight', e.target.value)}
+                                    placeholder="0"
+                                    // Manual items might need editable weight
+                                    readOnly={!!item.productId}
+                                    style={{ background: item.productId ? '#f9fafb' : 'white' }}
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 10, color: '#6b7280' }}>Purity</label>
+                                <input
+                                    className={styles.input}
+                                    value={item.purity || ''}
+                                    readOnly
+                                    placeholder="-"
+                                    style={{ background: '#f9fafb' }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Row 2: Pricing Inputs */}
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 10, color: '#6b7280' }}>Rate/gm</label>
+                                <input
+                                    className={styles.input}
+                                    type="number"
+                                    value={item.ratePerGram || ''}
+                                    onChange={(e) => updateItem(item.id, 'ratePerGram', e.target.value)}
+                                    placeholder="Rate"
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 10, color: '#6b7280' }}>MC/gm</label>
+                                <input
+                                    className={styles.input}
+                                    type="number"
+                                    value={item.makingChargePerGram || ''}
+                                    onChange={(e) => updateItem(item.id, 'makingChargePerGram', e.target.value)}
+                                    placeholder="MC"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Row 3: Totals (Computed) */}
+                        <div style={{ display: 'flex', gap: 8, background: '#f8fafc', padding: 8, borderRadius: 6 }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 10, color: '#6b7280' }}>Mat. Value</div>
+                                <div style={{ fontSize: 12, fontWeight: 500 }}>
+                                    {formatCurrency((Number(item.netWeight) || 0) * (Number(item.ratePerGram) || 0))}
+                                </div>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 10, color: '#6b7280' }}>Making Chg</div>
+                                <div style={{ fontSize: 12, fontWeight: 500 }}>
+                                    {formatCurrency((Number(item.netWeight) || 0) * (Number(item.makingChargePerGram) || 0))}
+                                </div>
+                            </div>
+                            <div style={{ flex: 1, textAlign: 'right' }}>
+                                <div style={{ fontSize: 10, color: '#6b7280' }}>Total</div>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: '#2563eb' }}>
+                                    {formatCurrency(
+                                        ((Number(item.netWeight) || 0) * (Number(item.ratePerGram) || 0)) +
+                                        ((Number(item.netWeight) || 0) * (Number(item.makingChargePerGram) || 0))
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
                 ))}
-                <button className={styles.addButton} onClick={addItem} style={{ background: 'white', border: '1px solid #e5e7eb', color: '#4b5563' }}>
+
+                <button
+                    className={styles.addButton}
+                    onClick={() => {
+                        // Add Manual Item logic - reusing addItem from store but tailored for new fields
+                        useInvoiceStore.getState().addItem();
+                    }}
+                    style={{ background: 'white', border: '1px solid #e5e7eb', color: '#4b5563' }}
+                >
                     <FiPlus /> Add Manual Item
                 </button>
             </div>
@@ -190,8 +261,6 @@ export default function InvoiceForm() {
                     </div>
                 </div>
             </div>
-
-            {/* Toggles */}
 
 
             {/* Payments */}
@@ -256,6 +325,17 @@ export default function InvoiceForm() {
                         <span>Sub Total</span>
                         <span>{formatCurrency(totals.subtotal)}</span>
                     </div>
+
+                    {/* Tax Breakdown */}
+                    <div className={styles.footerRow} style={{ color: '#6b7280', fontSize: 12 }}>
+                        <span>CGST (1.5%)</span>
+                        <span>{formatCurrency(totals.cgst)}</span>
+                    </div>
+                    <div className={styles.footerRow} style={{ color: '#6b7280', fontSize: 12 }}>
+                        <span>SGST (1.5%)</span>
+                        <span>{formatCurrency(totals.sgst)}</span>
+                    </div>
+
                     <div className={styles.footerRow}>
                         <span>Round Off</span>
                         <div

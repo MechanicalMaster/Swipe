@@ -89,7 +89,21 @@ export const useInvoiceStore = create((set, get) => ({
     }),
 
     addItem: () => set((state) => ({
-        items: [...state.items, { id: Date.now(), name: '', rate: 0, quantity: 1, gstRate: 18, hsn: '' }]
+        items: [...state.items, {
+            id: Date.now(),
+            name: '',
+            rate: 0,
+            quantity: 1,
+            gstRate: 0,
+            hsn: '',
+
+            // Manual Item Defaults
+            netWeight: 0,
+            grossWeight: 0,
+            ratePerGram: 0,
+            makingChargePerGram: 0,
+            purity: ''
+        }]
     })),
 
     updateItem: (id, field, value) => set((state) => ({
@@ -118,15 +132,43 @@ export const useInvoiceStore = create((set, get) => ({
                 )
             };
         } else if (change > 0) {
+            // Auto-fill logic for Jewellery
+            // Name fallback: SubCategory -> Name
+            const itemName = product.subCategory || product.name;
+
+            // Default rate: Use sellingPrice as fallback for ratePerGram if not explicitly defined in product (assuming product table doesn't have ratePerGram yet, using sellingPrice)
+            // The prompt says "Rate Per Gram... Default value can be blank or system-defined". We'll use sellingPrice.
+            const ratePerGram = Number(product.sellingPrice) || 0;
+
+            // Making Charge: The prompt implies this is a new input, or fetched. 
+            // We'll check if product has makingCharges, else 0.
+            const makingChargePerGram = Number(product.makingCharges) || 0;
+
+            // Weights
+            const grossWeight = Number(product.grossWeight) || 0;
+            const netWeight = Number(product.netWeight) || 0;
+
             return {
                 items: [...state.items, {
                     id: Date.now(),
                     productId: product.id,
-                    name: product.name,
-                    rate: Number(product.sellingPrice) || 0,
+                    name: itemName,
+                    rate: 0, // Legacy field, might not be used directly in new calculation but keeping for compatibility
                     quantity: change,
-                    gstRate: Number(product.taxRate) || 0,
-                    hsn: product.hsn || ''
+                    gstRate: 0, // New tax logic doesn't use per-item GST rate
+                    hsn: product.hsn || '',
+
+                    // Jewellery Fields
+                    grossWeight,
+                    netWeight,
+                    ratePerGram,
+                    makingChargePerGram,
+                    purity: product.purity || '',
+
+                    // Computed initial values (will be recalculated by calculateTotals usage in UI/save, but good to init)
+                    materialValue: netWeight * ratePerGram,
+                    makingCharge: netWeight * makingChargePerGram,
+                    itemTotal: (netWeight * ratePerGram) + (netWeight * makingChargePerGram)
                 }]
             };
         }
@@ -145,6 +187,21 @@ export const useInvoiceStore = create((set, get) => ({
         const balanceDue = totals.total - (payment.amountReceived || 0);
         const status = balanceDue <= 0 ? 'Paid' : (payment.amountReceived > 0 ? 'Partial' : 'Unpaid');
 
+        // Prepare items with computed values for persistence
+        const persistedItems = items.map(item => {
+            // Re-calculate line item totals to be sure
+            const matVal = (Number(item.netWeight) || 0) * (Number(item.ratePerGram) || 0);
+            const mc = (Number(item.netWeight) || 0) * (Number(item.makingChargePerGram) || 0);
+            const itemTotal = matVal + mc;
+
+            return {
+                ...item,
+                materialValue: matVal,
+                makingCharge: mc,
+                itemTotal: itemTotal
+            };
+        });
+
         const invoiceData = {
             invoiceNumber,
             date,
@@ -153,12 +210,19 @@ export const useInvoiceStore = create((set, get) => ({
             invoiceCopyType,
             customerId: customer.id,
             customer: { name: customer.name, id: customer.id, phone: customer.phone }, // Snapshot
-            items,
+            items: persistedItems,
             details,
             toggles,
             totals,
             status,
             balanceDue,
+
+            // specific top-level tax columns for easy querying
+            cgstAmount: totals.cgst,
+            sgstAmount: totals.sgst,
+            totalBeforeTax: totals.subtotal,
+            totalAfterTax: totals.total,
+
             updatedAt: new Date().toISOString()
         };
 
@@ -235,15 +299,54 @@ export const useInvoiceStore = create((set, get) => ({
 
     calculateTotals: () => {
         const { items, details, roundOff } = get();
-        let subtotal = 0;
-        let totalTax = 0;
+        let subtotal = 0; // Total Before Tax
 
+        // Calculate line item totals
         items.forEach(item => {
-            const amount = item.rate * item.quantity;
-            const tax = (amount * item.gstRate) / 100;
-            subtotal += amount;
-            totalTax += tax;
+            // Logic: 
+            // Material Value = Net Weight * Rate Per Gram
+            // Making Charge = Net Weight * Making Charge Per Gram
+            // Item Total = Material Value + Making Charge
+
+            // For manual items that might not have weights:
+            // Fallback to legacy calc: rate * quantity?
+            // Prompt says: "For manual items... allow user to enter: item name, rate, weight, making charge manually."
+            // So we assume all items follow the new structure or we support legacy for manual.
+
+            let itemTotal = 0;
+
+            if (item.productId || (item.netWeight !== undefined)) {
+                // Jewellery Logic
+                const netWeight = Number(item.netWeight) || 0;
+                const ratePerGram = Number(item.ratePerGram) || 0;
+                const mcPerGram = Number(item.makingChargePerGram) || 0;
+
+                const materialValue = netWeight * ratePerGram;
+                const makingCharge = netWeight * mcPerGram;
+                itemTotal = materialValue + makingCharge;
+
+                // Consider quantity? Usually jewellery items are unique pieces (qty 1).
+                // But if user sets Qty > 1, we should multiply?
+                // Prompt "3. Support for Multiple Products... Each line item should independently calculate its own totals".
+                // Assuming Qty is effectively 1 per row for specific items, or if Qty > 1, it multiplies totals.
+                // Let's multiply by quantity to be safe standard behavior.
+                itemTotal = itemTotal * (item.quantity || 1);
+            } else {
+                // Legacy / Simple Manual Item fallback
+                itemTotal = (item.rate || 0) * (item.quantity || 1);
+            }
+
+            subtotal += itemTotal;
         });
+
+        // Tax Calculation (Invoice Level)
+        // CGST = 1.5%, SGST = 1.5%
+        const cgstRate = 1.5;
+        const sgstRate = 1.5;
+
+        const cgstAmount = (subtotal * cgstRate) / 100;
+        const sgstAmount = (subtotal * sgstRate) / 100;
+        const totalTax = cgstAmount + sgstAmount;
 
         let total = subtotal + totalTax;
 
@@ -261,16 +364,14 @@ export const useInvoiceStore = create((set, get) => ({
         }
 
         return {
-            subtotal,
+            subtotal, // This is Total Before Tax
             totalTax,
             total: finalTotal,
             roundOffAmount,
             rawTotal: total,
-            // Tax Breakdown (Simplified assumption: Intra-state if no POS or POS matches company state)
-            // In a real app, we'd compare company state vs customer state/POS
-            cgst: totalTax / 2,
-            sgst: totalTax / 2,
-            igst: 0 // Logic to be refined in component or here if we had access to company state
+            cgst: cgstAmount,
+            sgst: sgstAmount,
+            igst: 0
         };
     }
 }));

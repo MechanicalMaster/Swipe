@@ -71,15 +71,32 @@ export const Template3 = ({ data }) => {
                 </thead>
                 <tbody>
                     {items.map((item, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid #e7e5e4' }}>
-                            <td style={{ padding: '10px' }}>
-                                <div style={{ fontWeight: 'bold' }}>{item.name}</div>
-                            </td>
-                            <td style={{ padding: '10px', textAlign: 'center' }}>{item.hsn || '-'}</td>
-                            <td style={{ padding: '10px', textAlign: 'right' }}>{formatCurrency(item.rate)}</td>
-                            <td style={{ padding: '10px', textAlign: 'center' }}>{item.quantity}</td>
-                            <td style={{ padding: '10px', textAlign: 'right' }}>{formatCurrency(item.quantity * item.rate)}</td>
-                        </tr>
+                        <React.Fragment key={index}>
+                            <tr style={{ borderBottom: (item.netWeight || item.makingChargePerGram) ? 'none' : '1px solid #e7e5e4' }}>
+                                <td style={{ padding: '10px' }}>
+                                    <div style={{ fontWeight: 'bold' }}>{item.name}</div>
+                                </td>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>{item.hsn || '-'}</td>
+                                <td style={{ padding: '10px', textAlign: 'right' }}>{formatCurrency(item.rate)}</td>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>{item.quantity}</td>
+                                <td style={{ padding: '10px', textAlign: 'right' }}>{formatCurrency(item.quantity * item.rate)}</td>
+                            </tr>
+                            {/* Jewellery Detail Row */}
+                            {(item.netWeight || item.makingChargePerGram) > 0 && (
+                                <tr style={{ borderBottom: '1px solid #e7e5e4', fontSize: '10px', color: '#444', background: '#F7F7F7' }}>
+                                    <td colSpan={5} style={{ padding: '8px 12px 8px 12px' }}>
+                                        <div style={{ display: 'flex', gap: '8px 16px', flexWrap: 'wrap', marginLeft: '24px' }}>
+                                            <span><strong>Gross Wt:</strong> {item.grossWeight || 0}g</span>
+                                            <span><strong>Net Wt:</strong> {item.netWeight || 0}g</span>
+                                            <span><strong>Rate/gm:</strong> {formatCurrency(item.ratePerGram || 0)}</span>
+                                            <span><strong>MC/gm:</strong> {formatCurrency(item.makingChargePerGram || 0)}</span>
+                                            <span><strong>Mat. Val.:</strong> {formatCurrency(item.materialValue || 0)}</span>
+                                            <span><strong>Making Chg:</strong> {formatCurrency(item.makingCharge || 0)}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
                     ))}
                 </tbody>
             </table>
@@ -99,11 +116,11 @@ export const Template3 = ({ data }) => {
                     ) : (
                         <>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                                <span>CGST</span>
+                                <span>CGST (1.5%)</span>
                                 <span>{formatCurrency(totals.cgst)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                                <span>SGST</span>
+                                <span>SGST (1.5%)</span>
                                 <span>{formatCurrency(totals.sgst)}</span>
                             </div>
                         </>

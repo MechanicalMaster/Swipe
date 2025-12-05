@@ -1,14 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
-import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { useMasterStore } from '@/lib/store/masterStore';
+import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp, FiLock, FiUnlock, FiRefreshCw } from 'react-icons/fi';
 import styles from '../page.module.css';
 
 export default function AddProductPage() {
     const router = useRouter();
-    const { addProduct } = useProductStore();
+    const { addProduct, generateSKU } = useProductStore();
+    const { categories, loadCategories, subCategories, loadSubCategories } = useMasterStore();
+
+    const [skuLocked, setSkuLocked] = useState(true);
+
+    useEffect(() => {
+        loadCategories();
+        loadSubCategories();
+    }, []);
+
     const [formData, setFormData] = useState({
         type: 'product', // product, service
         name: '',
@@ -72,8 +82,35 @@ export default function AddProductPage() {
     const searchParams = useSearchParams();
     const returnUrl = searchParams.get('returnUrl');
 
+    // Auto-generate SKU
+    useEffect(() => {
+        const gen = async () => {
+            if (formData.category && formData.subCategory && skuLocked) {
+                const newSku = await generateSKU(formData.category, formData.subCategory);
+                setFormData(prev => ({ ...prev, sku: newSku }));
+            }
+        };
+        gen();
+    }, [formData.category, formData.subCategory, skuLocked]);
+
     const handleSave = async () => {
         if (!formData.name) return alert('Product Name is required');
+
+        // Audit Log for Manual SKU
+        if (!skuLocked) {
+            try {
+                await db.audit_logs.add({
+                    entityType: 'product',
+                    entityId: 0, // ID unknown yet, or we can just log the SKU
+                    action: 'MANUAL_SKU_OVERRIDE',
+                    details: `SKU set to ${formData.sku}`,
+                    timestamp: new Date()
+                });
+            } catch (e) {
+                console.error("Failed to log audit", e);
+            }
+        }
+
         await addProduct(formData);
         if (returnUrl) {
             router.push(returnUrl);
@@ -133,27 +170,57 @@ export default function AddProductPage() {
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                 />
                 <div style={{ display: 'flex', gap: 12 }}>
-                    <input
-                        className={styles.input}
-                        placeholder="Category (e.g. Ring, Necklace)"
+                    <select
+                        className={styles.select}
                         value={formData.category}
-                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                        onChange={e => setFormData({ ...formData, category: e.target.value, subCategory: '' })}
                         style={{ flex: 1 }}
-                    />
-                    <input
-                        className={styles.input}
-                        placeholder="Sub-category / Style"
+                    >
+                        <option value="">Select Category</option>
+                        {categories.map(c => (
+                            <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                    </select>
+                    <select
+                        className={styles.select}
                         value={formData.subCategory}
                         onChange={e => setFormData({ ...formData, subCategory: e.target.value })}
                         style={{ flex: 1 }}
-                    />
+                        disabled={!formData.category}
+                    >
+                        <option value="">Select Sub-category</option>
+                        {subCategories
+                            .filter(sc => {
+                                const parent = categories.find(c => c.name === formData.category);
+                                return parent && sc.categoryId === parent.id;
+                            })
+                            .map(sc => (
+                                <option key={sc.id} value={sc.name}>{sc.name}</option>
+                            ))
+                        }
+                    </select>
                 </div>
-                <input
-                    className={styles.input}
-                    placeholder="SKU / Product Code"
-                    value={formData.sku}
-                    onChange={e => setFormData({ ...formData, sku: e.target.value })}
-                />
+                <div style={{ position: 'relative' }}>
+                    <input
+                        className={styles.input}
+                        placeholder="SKU / Product Code"
+                        value={formData.sku}
+                        onChange={e => setFormData({ ...formData, sku: e.target.value })}
+                        disabled={skuLocked}
+                        style={{ paddingRight: 40, backgroundColor: skuLocked ? '#f3f4f6' : 'white' }}
+                    />
+                    <div
+                        onClick={() => setSkuLocked(!skuLocked)}
+                        style={{
+                            position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                            cursor: 'pointer', color: '#6b7280'
+                        }}
+                        title={skuLocked ? "Unlock to override" : "Lock to auto-generate"}
+                    >
+                        {skuLocked ? <FiLock /> : <FiUnlock />}
+                    </div>
+                </div>
+
                 <textarea
                     className={styles.input}
                     placeholder="Description"
@@ -494,6 +561,6 @@ export default function AddProductPage() {
             <div className={styles.footer}>
                 <button className={styles.saveButton} onClick={handleSave}>Add Product</button>
             </div>
-        </div>
+        </div >
     );
 }

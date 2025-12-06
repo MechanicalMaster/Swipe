@@ -237,9 +237,9 @@ export default function EditProductPage() {
                 rows={3}
                 style={{ resize: 'none', paddingTop: 14, height: 'auto', minHeight: '80px' }}
             />
-        </div>
 
-            {/* Metal-Specific Attributes */ }
+
+            {/* Metal-Specific Attributes */}
             <div className={styles.sectionTitle}>Metal Attributes</div>
             <div className={styles.card}>
                 <div style={{ display: 'flex', gap: 12 }}>
@@ -325,137 +325,137 @@ export default function EditProductPage() {
                 </div>
             </div>
 
-    {/* Gemstone Attributes (Collapsible) */ }
-    <div className={styles.card} style={{ padding: 0, overflow: 'hidden' }}>
-        <div
-            onClick={() => setFormData({ ...formData, hasStones: !formData.hasStones })}
-            style={{
-                padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                cursor: 'pointer', background: formData.hasStones ? '#f9fafb' : 'white'
-            }}
-        >
-            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-                Gemstone / Diamond Attributes
-                {formData.hasStones && <span style={{ fontSize: 10, background: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: 4 }}>Active</span>}
+            {/* Gemstone Attributes (Collapsible) */}
+            <div className={styles.card} style={{ padding: 0, overflow: 'hidden' }}>
+                <div
+                    onClick={() => setFormData({ ...formData, hasStones: !formData.hasStones })}
+                    style={{
+                        padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        cursor: 'pointer', background: formData.hasStones ? '#f9fafb' : 'white'
+                    }}
+                >
+                    <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        Gemstone / Diamond Attributes
+                        {formData.hasStones && <span style={{ fontSize: 10, background: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: 4 }}>Active</span>}
+                    </div>
+                    {formData.hasStones ? <FiMinus /> : <FiPlus />}
+                </div>
+
+                {formData.hasStones && (
+                    <div style={{ padding: 16, borderTop: '1px solid #e5e7eb' }}>
+                        <div style={{ display: 'flex', gap: 12 }}>
+                            <input
+                                className={styles.input}
+                                placeholder="Stone Type (e.g. Diamond, Ruby)"
+                                value={formData.stoneType}
+                                onChange={e => setFormData({ ...formData, stoneType: e.target.value })}
+                                style={{ flex: 1 }}
+                            />
+                            <input
+                                className={styles.input}
+                                type="number"
+                                placeholder="Total Count"
+                                value={formData.stoneCount}
+                                onChange={e => setFormData({ ...formData, stoneCount: e.target.value })}
+                                style={{ flex: 1 }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: 12 }}>
+                            <input
+                                className={styles.input}
+                                type="number"
+                                placeholder="Weight (carats)"
+                                value={formData.stoneWeight}
+                                onChange={e => setFormData({ ...formData, stoneWeight: e.target.value })}
+                                style={{ flex: 1 }}
+                            />
+                            <input
+                                className={styles.input}
+                                placeholder="Shape (Round, Oval)"
+                                value={formData.stoneShape}
+                                onChange={e => setFormData({ ...formData, stoneShape: e.target.value })}
+                                style={{ flex: 1 }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: 12 }}>
+                            <input
+                                className={styles.input}
+                                placeholder="Clarity (SI, VS, VVS)"
+                                value={formData.stoneClarity}
+                                onChange={e => setFormData({ ...formData, stoneClarity: e.target.value })}
+                                style={{ flex: 1 }}
+                            />
+                            <input
+                                className={styles.input}
+                                placeholder="Color (D, E, F...)"
+                                value={formData.stoneColor}
+                                onChange={e => setFormData({ ...formData, stoneColor: e.target.value })}
+                                style={{ flex: 1 }}
+                            />
+                        </div>
+                        <input
+                            className={styles.input}
+                            placeholder="Certification (GIA, IGI...)"
+                            value={formData.stoneCertification}
+                            onChange={e => setFormData({ ...formData, stoneCertification: e.target.value })}
+                        />
+                        <input
+                            className={styles.input}
+                            type="number"
+                            placeholder="Stone Price / Charges"
+                            value={formData.stonePrice}
+                            onChange={e => setFormData({ ...formData, stonePrice: e.target.value })}
+                        />
+                    </div>
+                )}
             </div>
-            {formData.hasStones ? <FiMinus /> : <FiPlus />}
-        </div>
 
-        {formData.hasStones && (
-            <div style={{ padding: 16, borderTop: '1px solid #e5e7eb' }}>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <input
-                        className={styles.input}
-                        placeholder="Stone Type (e.g. Diamond, Ruby)"
-                        value={formData.stoneType}
-                        onChange={e => setFormData({ ...formData, stoneType: e.target.value })}
-                        style={{ flex: 1 }}
-                    />
-                    <input
-                        className={styles.input}
-                        type="number"
-                        placeholder="Total Count"
-                        value={formData.stoneCount}
-                        onChange={e => setFormData({ ...formData, stoneCount: e.target.value })}
-                        style={{ flex: 1 }}
-                    />
+            {/* Design & Dimensions (Collapsible) */}
+            <div className={styles.card} style={{ padding: 0, overflow: 'hidden', marginTop: 16 }}>
+                <div
+                    onClick={() => setFormData(prev => ({ ...prev, showDesign: !prev.showDesign }))}
+                    style={{
+                        padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        cursor: 'pointer', background: formData.showDesign ? '#f9fafb' : 'white'
+                    }}
+                >
+                    <div style={{ fontWeight: 600 }}>Design & Dimension Attributes</div>
+                    {formData.showDesign ? <FiMinus /> : <FiPlus />}
                 </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <input
-                        className={styles.input}
-                        type="number"
-                        placeholder="Weight (carats)"
-                        value={formData.stoneWeight}
-                        onChange={e => setFormData({ ...formData, stoneWeight: e.target.value })}
-                        style={{ flex: 1 }}
-                    />
-                    <input
-                        className={styles.input}
-                        placeholder="Shape (Round, Oval)"
-                        value={formData.stoneShape}
-                        onChange={e => setFormData({ ...formData, stoneShape: e.target.value })}
-                        style={{ flex: 1 }}
-                    />
-                </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <input
-                        className={styles.input}
-                        placeholder="Clarity (SI, VS, VVS)"
-                        value={formData.stoneClarity}
-                        onChange={e => setFormData({ ...formData, stoneClarity: e.target.value })}
-                        style={{ flex: 1 }}
-                    />
-                    <input
-                        className={styles.input}
-                        placeholder="Color (D, E, F...)"
-                        value={formData.stoneColor}
-                        onChange={e => setFormData({ ...formData, stoneColor: e.target.value })}
-                        style={{ flex: 1 }}
-                    />
-                </div>
-                <input
-                    className={styles.input}
-                    placeholder="Certification (GIA, IGI...)"
-                    value={formData.stoneCertification}
-                    onChange={e => setFormData({ ...formData, stoneCertification: e.target.value })}
-                />
-                <input
-                    className={styles.input}
-                    type="number"
-                    placeholder="Stone Price / Charges"
-                    value={formData.stonePrice}
-                    onChange={e => setFormData({ ...formData, stonePrice: e.target.value })}
-                />
+
+                {formData.showDesign && (
+                    <div style={{ padding: 16, borderTop: '1px solid #e5e7eb' }}>
+                        <input
+                            className={styles.input}
+                            placeholder="Size (Ring size, Length)"
+                            value={formData.size}
+                            onChange={e => setFormData({ ...formData, size: e.target.value })}
+                        />
+                        <input
+                            className={styles.input}
+                            placeholder="Pattern / Design Details"
+                            value={formData.pattern}
+                            onChange={e => setFormData({ ...formData, pattern: e.target.value })}
+                        />
+                        <input
+                            className={styles.input}
+                            placeholder="Engraving Text"
+                            value={formData.engravingText}
+                            onChange={e => setFormData({ ...formData, engravingText: e.target.value })}
+                        />
+                        <div className={styles.toggleRow} style={{ marginTop: 8 }}>
+                            <span className={styles.toggleLabel}>Customizable</span>
+                            <input
+                                type="checkbox"
+                                checked={formData.customizable}
+                                onChange={e => setFormData({ ...formData, customizable: e.target.checked })}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
-        )}
-    </div>
 
-    {/* Design & Dimensions (Collapsible) */ }
-    <div className={styles.card} style={{ padding: 0, overflow: 'hidden', marginTop: 16 }}>
-        <div
-            onClick={() => setFormData(prev => ({ ...prev, showDesign: !prev.showDesign }))}
-            style={{
-                padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                cursor: 'pointer', background: formData.showDesign ? '#f9fafb' : 'white'
-            }}
-        >
-            <div style={{ fontWeight: 600 }}>Design & Dimension Attributes</div>
-            {formData.showDesign ? <FiMinus /> : <FiPlus />}
-        </div>
-
-        {formData.showDesign && (
-            <div style={{ padding: 16, borderTop: '1px solid #e5e7eb' }}>
-                <input
-                    className={styles.input}
-                    placeholder="Size (Ring size, Length)"
-                    value={formData.size}
-                    onChange={e => setFormData({ ...formData, size: e.target.value })}
-                />
-                <input
-                    className={styles.input}
-                    placeholder="Pattern / Design Details"
-                    value={formData.pattern}
-                    onChange={e => setFormData({ ...formData, pattern: e.target.value })}
-                />
-                <input
-                    className={styles.input}
-                    placeholder="Engraving Text"
-                    value={formData.engravingText}
-                    onChange={e => setFormData({ ...formData, engravingText: e.target.value })}
-                />
-                <div className={styles.toggleRow} style={{ marginTop: 8 }}>
-                    <span className={styles.toggleLabel}>Customizable</span>
-                    <input
-                        type="checkbox"
-                        checked={formData.customizable}
-                        onChange={e => setFormData({ ...formData, customizable: e.target.checked })}
-                    />
-                </div>
-            </div>
-        )}
-    </div>
-
-    {/* Pricing & Inventory */ }
+            {/* Pricing & Inventory */}
             <div className={styles.sectionTitle}>Pricing & Inventory</div>
             <div className={styles.card}>
                 <input
@@ -491,7 +491,7 @@ export default function EditProductPage() {
                 </div>
             </div>
 
-    {/* Taxation & Compliance */ }
+            {/* Taxation & Compliance */}
             <div className={styles.sectionTitle}>Taxation & Compliance</div>
             <div className={styles.card}>
                 <div style={{ display: 'flex', gap: 12 }}>
@@ -529,7 +529,7 @@ export default function EditProductPage() {
                 />
             </div>
 
-    {/* Media & Attachments */ }
+            {/* Media & Attachments */}
             <div className={styles.sectionTitle}>Product Images</div>
             <div className={styles.card}>
                 <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>
@@ -551,7 +551,7 @@ export default function EditProductPage() {
                 </div>
             </div>
 
-    {/* Optional Metadata */ }
+            {/* Optional Metadata */}
             <div className={styles.sectionTitle}>Optional Details</div>
             <div className={styles.card}>
                 <input

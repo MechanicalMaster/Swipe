@@ -28,8 +28,9 @@ const dummyData = {
 
 export default function TemplatesPage() {
     const router = useRouter();
-    const { templateId, setTemplateId, loadSettings } = useSettingsStore();
+    const { templateId, setTemplateId, lendingBillTemplateId, setLendingBillTemplateId, loadSettings } = useSettingsStore();
     const [selectedId, setSelectedId] = useState('modern');
+    const [selectedLendingId, setSelectedLendingId] = useState('modern');
 
     useEffect(() => {
         loadSettings();
@@ -39,10 +40,14 @@ export default function TemplatesPage() {
         if (templateId) {
             setSelectedId(templateId);
         }
-    }, [templateId]);
+        if (lendingBillTemplateId) {
+            setSelectedLendingId(lendingBillTemplateId);
+        }
+    }, [templateId, lendingBillTemplateId]);
 
     const handleSave = async () => {
         await setTemplateId(selectedId);
+        await setLendingBillTemplateId(selectedLendingId);
         router.back();
     };
 
@@ -80,6 +85,7 @@ export default function TemplatesPage() {
             </div>
 
             {/* Template Selector */}
+            {/* Invoice Template Selector */}
             <div style={{
                 background: 'white',
                 padding: '20px',
@@ -87,7 +93,7 @@ export default function TemplatesPage() {
                 zIndex: 10
             }}>
                 <div style={{ marginBottom: '16px', fontWeight: 600 }}>Choose Invoice Template</div>
-                <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px' }}>
+                <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '24px' }}>
                     {Object.values(templates).map((template) => (
                         <div
                             key={template.id}
@@ -129,6 +135,59 @@ export default function TemplatesPage() {
                                 )}
                             </div>
                             <div style={{ fontSize: '12px', fontWeight: selectedId === template.id ? 600 : 400 }}>
+                                {template.name}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Lending Bill Template Selector */}
+                <div style={{ marginBottom: '16px' }}>
+                    <div style={{ fontWeight: 600 }}>Lending Bill Template</div>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>This template controls the layout and styling of your Lending Bill PDFs.</div>
+                </div>
+                <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px' }}>
+                    {Object.values(templates).map((template) => (
+                        <div
+                            key={`lending-${template.id}`}
+                            onClick={() => setSelectedLendingId(template.id)}
+                            style={{
+                                minWidth: '100px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }}
+                        >
+                            <div style={{
+                                width: '80px',
+                                height: '100px',
+                                border: selectedLendingId === template.id ? '2px solid #2563eb' : '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                background: '#f9fafb',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}>
+                                <img
+                                    src={template.thumbnail}
+                                    alt={template.name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                                {selectedLendingId === template.id && (
+                                    <div style={{
+                                        position: 'absolute', top: 4, right: 4,
+                                        background: '#2563eb', borderRadius: '50%',
+                                        width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}>
+                                        <FiCheck size={10} color="white" />
+                                    </div>
+                                )}
+                            </div>
+                            <div style={{ fontSize: '12px', fontWeight: selectedLendingId === template.id ? 600 : 400 }}>
                                 {template.name}
                             </div>
                         </div>

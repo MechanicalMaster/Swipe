@@ -32,15 +32,18 @@ export const useSettingsStore = create((set, get) => ({
         phone: ''
     },
     templateId: 'modern', // Default template
+    lendingBillTemplateId: 'modern', // Default Lending Bill template
 
     loadSettings: async () => {
         const company = await db.settings.get('companyDetails');
         const user = await db.settings.get('userProfile');
         const template = await db.settings.get('templateId');
+        const lendingTemplate = await db.settings.get('lendingBillTemplateId');
 
         if (company) set({ companyDetails: company.value });
         if (user) set({ userProfile: user.value });
         if (template) set({ templateId: template.value });
+        if (lendingTemplate) set({ lendingBillTemplateId: lendingTemplate.value });
     },
 
     updateCompanyDetails: async (details) => {
@@ -60,6 +63,11 @@ export const useSettingsStore = create((set, get) => ({
         await db.settings.put({ key: 'templateId', value: id });
     },
 
+    setLendingBillTemplateId: async (id) => {
+        set({ lendingBillTemplateId: id });
+        await db.settings.put({ key: 'lendingBillTemplateId', value: id });
+    },
+
     resetData: async () => {
         await db.delete();
         await db.open();
@@ -70,7 +78,8 @@ export const useSettingsStore = create((set, get) => ({
                 signatureUrl: null, authorizedSignatoryLabel: '', upiId: ''
             },
             userProfile: { name: '', email: '', phone: '' },
-            templateId: 'modern'
+            templateId: 'modern',
+            lendingBillTemplateId: 'modern'
         });
         window.location.reload();
     }

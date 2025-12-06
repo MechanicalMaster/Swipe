@@ -42,14 +42,16 @@ export const Template2 = ({ data }) => {
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                    <h1 style={{ fontSize: '20px', color: '#2563eb', fontWeight: 700, margin: '0 0 2px 0', textTransform: 'uppercase' }}>TAX INVOICE</h1>
+                    <h1 style={{ fontSize: '20px', color: '#2563eb', fontWeight: 700, margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                        {data.type === 'PROFORMA' ? 'PRO FORMA INVOICE' : data.type === 'LENDING' ? 'LENDING BILL' : 'TAX INVOICE'}
+                    </h1>
                     <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#6b7280', marginBottom: '20px' }}>{invoiceCopyType || 'ORIGINAL FOR RECIPIENT'}</div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: '4px 16px', justifyContent: 'end', textAlign: 'right' }}>
-                        <span style={{ color: '#6b7280' }}>Invoice #:</span> <span style={{ fontWeight: 600 }}>{invoiceNumber}</span>
-                        <span style={{ color: '#6b7280' }}>Invoice Date:</span> <span style={{ fontWeight: 600 }}>{date}</span>
-                        <span style={{ color: '#6b7280' }}>Due Date:</span> <span style={{ fontWeight: 600 }}>{dueDate}</span>
-                        <span style={{ color: '#6b7280' }}>Place of Supply:</span> <span style={{ fontWeight: 600 }}>{placeOfSupply}</span>
+                        <span style={{ color: '#6b7280' }}>{data.type === 'PROFORMA' ? 'Pro Forma #:' : data.type === 'LENDING' ? 'Bill #:' : 'Invoice #:'}</span> <span style={{ fontWeight: 600 }}>{invoiceNumber}</span>
+                        <span style={{ color: '#6b7280' }}>Date:</span> <span style={{ fontWeight: 600 }}>{date}</span>
+                        {data.type !== 'LENDING' && <><span style={{ color: '#6b7280' }}>Due Date:</span> <span style={{ fontWeight: 600 }}>{dueDate}</span></>}
+                        {data.type !== 'PROFORMA' && data.type !== 'LENDING' && <><span style={{ color: '#6b7280' }}>Place of Supply:</span> <span style={{ fontWeight: 600 }}>{placeOfSupply}</span></>}
                     </div>
                 </div>
             </div>
@@ -84,11 +86,11 @@ export const Template2 = ({ data }) => {
                 <thead>
                     <tr style={{ background: '#2563eb', color: 'white' }}>
                         <th style={{ padding: '10px', textAlign: 'left', fontSize: '12px', fontWeight: 600, width: '40px' }}>#</th>
-                        <th style={{ padding: '10px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>Item</th>
-                        <th style={{ padding: '10px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>HSN/SAC</th>
-                        <th style={{ padding: '10px', textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>Rate/Item</th>
+                        <th style={{ padding: '10px', textAlign: 'left', fontSize: '12px', fontWeight: 600, width: data.type === 'LENDING' ? '70%' : 'auto' }}>Item</th>
+                        {data.type !== 'LENDING' && <th style={{ padding: '10px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>HSN/SAC</th>}
+                        {data.type !== 'LENDING' && <th style={{ padding: '10px', textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>Rate/Item</th>}
                         <th style={{ padding: '10px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Qty</th>
-                        <th style={{ padding: '10px', textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>Amount</th>
+                        {data.type !== 'LENDING' && <th style={{ padding: '10px', textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>Amount</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -99,10 +101,10 @@ export const Template2 = ({ data }) => {
                                 <td style={{ padding: '12px 10px', verticalAlign: 'top' }}>
                                     <div style={{ fontWeight: 600, marginBottom: '4px' }}>{item.name}</div>
                                 </td>
-                                <td style={{ padding: '12px 10px', textAlign: 'center', verticalAlign: 'top' }}>{item.hsn || '-'}</td>
-                                <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top' }}>{formatCurrency(item.rate)}</td>
+                                {data.type !== 'LENDING' && <td style={{ padding: '12px 10px', textAlign: 'center', verticalAlign: 'top' }}>{item.hsn || '-'}</td>}
+                                {data.type !== 'LENDING' && <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top' }}>{formatCurrency(item.rate)}</td>}
                                 <td style={{ padding: '12px 10px', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity}</td>
-                                <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: 600 }}>{formatCurrency(item.quantity * item.rate)}</td>
+                                {data.type !== 'LENDING' && <td style={{ padding: '12px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: 600 }}>{formatCurrency(item.quantity * item.rate)}</td>}
                             </tr>
                             {/* Jewellery Detail Row */}
                             {(item.netWeight || item.makingChargePerGram) > 0 && (
@@ -129,57 +131,73 @@ export const Template2 = ({ data }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <div style={{ flex: 1, paddingRight: '40px' }}>
                     <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '8px', fontSize: '11px', color: '#6b7280' }}>
-                        Total Items / Qty : {items.length} / {items.reduce((acc, item) => acc + item.quantity, 0)}
+                        Total Items / Qty : {items.length} / {items.reduce((acc, item) => acc + (item.quantity || 0), 0)}
                     </div>
                 </div>
 
-                <div style={{ width: '350px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                        <span style={{ fontWeight: 600 }}>Taxable Amount</span>
-                        <span style={{ fontWeight: 600 }}>{formatCurrency(totals.subtotal)}</span>
-                    </div>
-
-                    {totals.igst > 0 ? (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                            <span>IGST</span>
-                            <span>{formatCurrency(totals.igst)}</span>
+                {data.type === 'LENDING' ? (
+                    <div style={{ width: '350px', background: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>Weight Summary</h4>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span>Gross Weight:</span>
+                            <strong>{data.weightSummary?.grossWeight || '0'} g</strong>
                         </div>
-                    ) : (
-                        <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                                <span>CGST (1.5%)</span>
-                                <span>{formatCurrency(totals.cgst)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                                <span>SGST (1.5%)</span>
-                                <span>{formatCurrency(totals.sgst)}</span>
-                            </div>
-                        </>
-                    )}
-
-                    {totals.roundOffAmount !== 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                            <span>Round Off</span>
-                            <span>{totals.roundOffAmount.toFixed(2)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Net Weight:</span>
+                            <strong>{data.weightSummary?.netWeight || '0'} g</strong>
                         </div>
-                    )}
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', marginTop: '8px', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '18px', fontWeight: 800 }}>Total</span>
-                        <span style={{ fontSize: '18px', fontWeight: 800 }}>{formatCurrency(totals.total)}</span>
                     </div>
+                ) : (
+                    <div style={{ width: '350px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
+                            <span style={{ fontWeight: 600 }}>Taxable Amount</span>
+                            <span style={{ fontWeight: 600 }}>{formatCurrency(totals.subtotal)}</span>
+                        </div>
 
-                    <div style={{ fontSize: '11px', color: '#6b7280', textAlign: 'right' }}>
-                        Amount Payable: <span style={{ color: '#000', fontWeight: 600 }}>{formatCurrency(totals.total)}</span>
+                        {data.type !== 'PROFORMA' && (totals.igst > 0 ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
+                                <span>IGST</span>
+                                <span>{formatCurrency(totals.igst)}</span>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
+                                    <span>CGST (1.5%)</span>
+                                    <span>{formatCurrency(totals.cgst)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
+                                    <span>SGST (1.5%)</span>
+                                    <span>{formatCurrency(totals.sgst)}</span>
+                                </div>
+                            </>
+                        ))}
+
+                        {totals.roundOffAmount !== 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
+                                <span>Round Off</span>
+                                <span>{totals.roundOffAmount.toFixed(2)}</span>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', marginTop: '8px', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '18px', fontWeight: 800 }}>Total</span>
+                            <span style={{ fontSize: '18px', fontWeight: 800 }}>{formatCurrency(totals.total)}</span>
+                        </div>
+
+                        <div style={{ fontSize: '11px', color: '#6b7280', textAlign: 'right' }}>
+                            Amount Payable: <span style={{ color: '#000', fontWeight: 600 }}>{formatCurrency(totals.total)}</span>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* Amount in Words */}
-            <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '10px', marginBottom: '20px', fontSize: '12px' }}>
-                <span style={{ color: '#6b7280' }}>Total amount (in words): </span>
-                <span style={{ fontWeight: 600 }}>INR {numberToWords(Math.round(totals.total))} Only.</span>
-            </div>
+            {data.type !== 'LENDING' && (
+                <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '10px', marginBottom: '20px', fontSize: '12px' }}>
+                    <span style={{ color: '#6b7280' }}>Total amount (in words): </span>
+                    <span style={{ fontWeight: 600 }}>INR {numberToWords(Math.round(totals.total))} Only.</span>
+                </div>
+            )}
 
             {/* Bank & Signature */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>

@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import {
-  RiFileList3Line, RiShoppingCartLine, RiClipboardLine, RiTruckLine,
+  RiFileList3Line, RiShoppingCartLine, RiClipboardLine,
   RiArrowGoBackLine, RiArchiveLine, RiWallet3Line, RiCalculatorLine,
   RiCarLine, RiFilePaper2Line, RiSecurePaymentLine, RiPieChartLine,
-  RiLineChartLine, RiMoneyDollarCircleLine, RiSettings3Line, RiRocketLine
+  RiLineChartLine, RiMoneyDollarCircleLine, RiSettings3Line, RiRocketLine, RiCalendarCheckLine
 } from 'react-icons/ri';
 import styles from './page.module.css';
 
@@ -11,11 +11,11 @@ const createItems = [
   { name: 'Invoice', icon: RiFileList3Line, href: '/invoice/create' },
   { name: 'Purchase', icon: RiShoppingCartLine, href: '/bills/purchase/create' },
   { name: 'Quotation', icon: RiClipboardLine, href: '/coming-soon' },
-  { name: 'Delivery Challan', icon: RiTruckLine, href: '/coming-soon' },
+  { name: 'Daily Login', icon: RiCalendarCheckLine, href: '/attendance' },
   { name: 'Credit Note', icon: RiArrowGoBackLine, href: '/coming-soon' },
-  { name: 'Purchase Order', icon: RiArchiveLine, href: '/coming-soon' },
+  { name: 'Lending Bill', icon: RiArchiveLine, href: '/invoice/create?type=lending' },
   { name: 'Expenses', icon: RiWallet3Line, href: '/more/bills/expenses/create' },
-  { name: 'Pro Forma Invoice', icon: RiCalculatorLine, href: '/coming-soon' },
+  { name: 'Pro Forma Invoice', icon: RiCalculatorLine, href: '/invoice/create?type=proforma' },
 ];
 
 const quickAccessItems = [

@@ -106,7 +106,15 @@ export default function BillsPage() {
                             <div className={styles.itemMain}>
                                 <div className={styles.itemTitle}>
                                     {item.invoiceNumber || item.purchaseNumber}
-                                    <span className={styles.status}>{item.status}</span>
+                                    <span style={{ gap: 4, display: 'flex', alignItems: 'center' }}>
+                                        {item.type === 'PROFORMA' && (
+                                            <span style={{ fontSize: 10, background: '#e0e7ff', color: '#4338ca', padding: '1px 4px', borderRadius: 2 }}>PRO FORMA</span>
+                                        )}
+                                        {item.type === 'LENDING' && (
+                                            <span style={{ fontSize: 10, background: '#f3f4f6', color: '#374151', padding: '1px 4px', borderRadius: 2 }}>LENDING</span>
+                                        )}
+                                        <span className={styles.status}>{item.status}</span>
+                                    </span>
                                 </div>
                                 <div className={styles.itemSub}>{item.date}</div>
                             </div>

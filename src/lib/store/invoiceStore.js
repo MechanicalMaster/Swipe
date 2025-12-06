@@ -11,6 +11,7 @@ export const useInvoiceStore = create((set, get) => ({
     customer: null,
     items: [],
     invoices: [], // List of all invoices
+    type: 'INVOICE', // 'INVOICE' | 'PROFORMA'
 
     loadInvoices: async () => {
         const invoices = await db.invoices.toArray();
@@ -25,6 +26,10 @@ export const useInvoiceStore = create((set, get) => ({
         extraDiscount: 0,
         shippingCharges: 0,
         packagingCharges: 0,
+    },
+    weightSummary: {
+        grossWeight: '',
+        netWeight: '',
     },
     toggles: {
         tds: false,
@@ -46,6 +51,11 @@ export const useInvoiceStore = create((set, get) => ({
     setPlaceOfSupply: (pos) => set({ placeOfSupply: pos }),
     setInvoiceCopyType: (type) => set({ invoiceCopyType: type }),
     setCustomer: (customer) => set({ customer }),
+    setInvoiceType: (type) => set({ type }),
+
+    setWeightSummary: (field, value) => set((state) => ({
+        weightSummary: { ...state.weightSummary, [field]: value }
+    })),
 
     setInvoice: (invoice) => set({
         id: invoice.id,
@@ -57,9 +67,11 @@ export const useInvoiceStore = create((set, get) => ({
         customer: invoice.customer,
         items: invoice.items,
         details: invoice.details || { reference: '', notes: '', terms: '', extraDiscount: 0, shippingCharges: 0, packagingCharges: 0 },
+        weightSummary: invoice.weightSummary || { grossWeight: '', netWeight: '' },
         toggles: invoice.toggles || { tds: false, tcs: false, rcm: false },
         payment: invoice.payment || { isFullyPaid: false, amountReceived: 0, mode: 'Cash', notes: '' },
-        roundOff: invoice.totals?.roundOffAmount !== 0 // Infer roundOff from totals if not explicitly saved, or just default to false if not present
+        roundOff: invoice.totals?.roundOffAmount !== 0,
+        type: invoice.type || 'INVOICE'
     }),
 
     updateDetails: (field, value) => set((state) => ({
@@ -75,7 +87,7 @@ export const useInvoiceStore = create((set, get) => ({
 
     resetInvoice: () => set({
         id: null,
-        invoiceNumber: 'INV-' + Date.now().toString().slice(-4), // Simple auto-increment simulation
+        invoiceNumber: 'INV-' + Date.now().toString().slice(-4), // Should be overwritten by useEffect in Create page ideally
         date: new Date().toISOString().split('T')[0],
         dueDate: new Date().toISOString().split('T')[0],
         placeOfSupply: '',
@@ -83,9 +95,11 @@ export const useInvoiceStore = create((set, get) => ({
         customer: null,
         items: [],
         details: { reference: '', notes: '', terms: '', extraDiscount: 0, shippingCharges: 0, packagingCharges: 0 },
+        weightSummary: { grossWeight: '', netWeight: '' },
         toggles: { tds: false, tcs: false, rcm: false },
         payment: { isFullyPaid: false, amountReceived: 0, mode: 'Cash', notes: '' },
-        roundOff: false
+        roundOff: false,
+        type: 'INVOICE'
     }),
 
     addItem: () => set((state) => ({
@@ -136,12 +150,10 @@ export const useInvoiceStore = create((set, get) => ({
             // Name fallback: SubCategory -> Name
             const itemName = product.subCategory || product.name;
 
-            // Default rate: Use sellingPrice as fallback for ratePerGram if not explicitly defined in product (assuming product table doesn't have ratePerGram yet, using sellingPrice)
-            // The prompt says "Rate Per Gram... Default value can be blank or system-defined". We'll use sellingPrice.
+            // Default rate: Use sellingPrice as fallback for ratePerGram if not explicitly defined in product
             const ratePerGram = Number(product.sellingPrice) || 0;
 
-            // Making Charge: The prompt implies this is a new input, or fetched. 
-            // We'll check if product has makingCharges, else 0.
+            // Making Charge
             const makingChargePerGram = Number(product.makingCharges) || 0;
 
             // Weights
@@ -153,9 +165,9 @@ export const useInvoiceStore = create((set, get) => ({
                     id: Date.now(),
                     productId: product.id,
                     name: itemName,
-                    rate: 0, // Legacy field, might not be used directly in new calculation but keeping for compatibility
+                    rate: 0, // Legacy field
                     quantity: change,
-                    gstRate: 0, // New tax logic doesn't use per-item GST rate
+                    gstRate: 0, // New logic doesn't use per-item GST rate
                     hsn: product.hsn || '',
 
                     // Jewellery Fields
@@ -165,7 +177,7 @@ export const useInvoiceStore = create((set, get) => ({
                     makingChargePerGram,
                     purity: product.purity || '',
 
-                    // Computed initial values (will be recalculated by calculateTotals usage in UI/save, but good to init)
+                    // Computed initial values
                     materialValue: netWeight * ratePerGram,
                     makingCharge: netWeight * makingChargePerGram,
                     itemTotal: (netWeight * ratePerGram) + (netWeight * makingChargePerGram)
@@ -177,7 +189,7 @@ export const useInvoiceStore = create((set, get) => ({
 
     saveInvoice: async () => {
         const state = get();
-        const { invoiceNumber, date, dueDate, placeOfSupply, invoiceCopyType, customer, items, details, toggles, payment, id } = state;
+        const { invoiceNumber, date, dueDate, placeOfSupply, invoiceCopyType, customer, items, details, weightSummary, toggles, payment, id, type } = state;
 
         if (!customer) throw new Error('Customer is required');
 
@@ -212,10 +224,12 @@ export const useInvoiceStore = create((set, get) => ({
             customer: { name: customer.name, id: customer.id, phone: customer.phone }, // Snapshot
             items: persistedItems,
             details,
+            weightSummary,
             toggles,
             totals,
-            status,
+            status: type === 'LENDING' ? 'Pending' : status, // Lending bills are always Pending/Open initially?
             balanceDue,
+            type: type || 'INVOICE',
 
             // specific top-level tax columns for easy querying
             cgstAmount: totals.cgst,
@@ -235,49 +249,51 @@ export const useInvoiceStore = create((set, get) => ({
                 invoiceId = await db.invoices.add({ ...invoiceData, createdAt: new Date().toISOString() });
             }
 
-            // Handle Payment if exists and is new (logic for editing payments is complex, assuming new invoice for now)
-            // For now, we only create payment record if it's a NEW invoice and amount > 0. 
-            // Editing invoice payment logic is tricky without tracking previous payments.
-            // We will assume this is primarily for creation.
-            if (!id && payment.amountReceived > 0) {
-                const paymentId = await db.payments.add({
-                    transactionNumber: 'PAYIN-' + Date.now().toString().slice(-4),
-                    date: date,
-                    type: 'IN',
-                    partyType: 'CUSTOMER',
-                    partyId: customer.id,
-                    amount: Number(payment.amountReceived),
-                    mode: payment.mode,
-                    notes: payment.notes,
-                    createdAt: new Date().toISOString()
-                });
+            // Only update payments/balance for regular Invoices.
+            // Pro Forma: No balance update.
+            // Lending Bill: No balance update (It's a goods loan, not a financial transaction yet).
 
-                await db.payment_allocations.add({
-                    paymentId,
-                    invoiceId,
-                    amount: Number(payment.amountReceived)
-                });
+            if (type !== 'PROFORMA' && type !== 'LENDING') {
+                if (!id && payment.amountReceived > 0) {
+                    const paymentId = await db.payments.add({
+                        transactionNumber: 'PAYIN-' + Date.now().toString().slice(-4),
+                        date: date,
+                        type: 'IN',
+                        partyType: 'CUSTOMER',
+                        partyId: customer.id,
+                        amount: Number(payment.amountReceived),
+                        mode: payment.mode,
+                        notes: payment.notes,
+                        createdAt: new Date().toISOString()
+                    });
 
-                // Update Customer Balance
-                // We need to fetch current balance first to be safe, or just use atomic update if Dexie supports it (it doesn't for complex math).
-                const currentCustomer = await db.customers.get(customer.id);
-                if (currentCustomer) {
-                    // Invoice increases balance (debit), Payment decreases it (credit)
-                    // Net change = Invoice Total - Payment Amount
-                    // Wait, usually:
-                    // Balance = Receivable.
-                    // Invoice created -> Balance increases by Total.
-                    // Payment received -> Balance decreases by Amount.
-                    // So net change = Total - Amount.
-                    const newBalance = (currentCustomer.balance || 0) + totals.total - Number(payment.amountReceived);
-                    await db.customers.update(customer.id, { balance: newBalance });
-                }
-            } else if (!id) {
-                // Only Invoice created, no payment
-                const currentCustomer = await db.customers.get(customer.id);
-                if (currentCustomer) {
-                    const newBalance = (currentCustomer.balance || 0) + totals.total;
-                    await db.customers.update(customer.id, { balance: newBalance });
+                    await db.payment_allocations.add({
+                        paymentId,
+                        invoiceId,
+                        amount: Number(payment.amountReceived)
+                    });
+
+                    // Update Customer Balance
+                    // We need to fetch current balance first to be safe, or just use atomic update if Dexie supports it (it doesn't for complex math).
+                    const currentCustomer = await db.customers.get(customer.id);
+                    if (currentCustomer) {
+                        // Invoice increases balance (debit), Payment decreases it (credit)
+                        // Net change = Invoice Total - Payment Amount
+                        // Wait, usually:
+                        // Balance = Receivable.
+                        // Invoice created -> Balance increases by Total.
+                        // Payment received -> Balance decreases by Amount.
+                        // So net change = Total - Amount.
+                        const newBalance = (currentCustomer.balance || 0) + totals.total - Number(payment.amountReceived);
+                        await db.customers.update(customer.id, { balance: newBalance });
+                    }
+                } else if (!id) {
+                    // Only Invoice created, no payment
+                    const currentCustomer = await db.customers.get(customer.id);
+                    if (currentCustomer) {
+                        const newBalance = (currentCustomer.balance || 0) + totals.total;
+                        await db.customers.update(customer.id, { balance: newBalance });
+                    }
                 }
             }
 
@@ -298,7 +314,7 @@ export const useInvoiceStore = create((set, get) => ({
     },
 
     calculateTotals: () => {
-        const { items, details, roundOff } = get();
+        const { items, details, roundOff, type } = get();
         let subtotal = 0; // Total Before Tax
 
         // Calculate line item totals
@@ -339,14 +355,34 @@ export const useInvoiceStore = create((set, get) => ({
             subtotal += itemTotal;
         });
 
-        // Tax Calculation (Invoice Level)
-        // CGST = 1.5%, SGST = 1.5%
-        const cgstRate = 1.5;
-        const sgstRate = 1.5;
+        // LENDING BILL Logic: No Price, No Tax
+        if (type === 'LENDING') {
+            return {
+                subtotal: 0,
+                totalTax: 0,
+                total: 0,
+                roundOffAmount: 0,
+                rawTotal: 0,
+                cgst: 0,
+                sgst: 0,
+                igst: 0
+            };
+        }
 
-        const cgstAmount = (subtotal * cgstRate) / 100;
-        const sgstAmount = (subtotal * sgstRate) / 100;
-        const totalTax = cgstAmount + sgstAmount;
+        // Tax Calculation (Invoice Level)
+        // If PROFORMA, Tax is 0.
+        let cgstAmount = 0;
+        let sgstAmount = 0;
+        let totalTax = 0;
+
+        if (type !== 'PROFORMA') {
+            const cgstRate = 1.5;
+            const sgstRate = 1.5;
+
+            cgstAmount = (subtotal * cgstRate) / 100;
+            sgstAmount = (subtotal * sgstRate) / 100;
+            totalTax = cgstAmount + sgstAmount;
+        }
 
         let total = subtotal + totalTax;
 

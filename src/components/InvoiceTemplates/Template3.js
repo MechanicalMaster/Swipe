@@ -27,7 +27,7 @@ export const Template3 = ({ data }) => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px' }}>
                 <div>
-                    <h1 style={{ fontSize: '36px', color: '#c2410c', margin: '0 0 10px 0' }}>INVOICE</h1>
+                    <h1 style={{ fontSize: '36px', color: '#c2410c', margin: '0 0 10px 0' }}>{data.type === 'PROFORMA' ? 'PRO FORMA' : data.type === 'LENDING' ? 'LENDING BILL' : 'INVOICE'}</h1>
                     <div style={{ fontSize: '14px', color: '#78716c' }}>#{invoiceNumber}</div>
                     <div style={{ fontSize: '12px', color: '#78716c', marginTop: '4px' }}>{invoiceCopyType}</div>
                 </div>
@@ -63,10 +63,10 @@ export const Template3 = ({ data }) => {
                 <thead>
                     <tr style={{ borderBottom: '2px solid #c2410c', color: '#c2410c' }}>
                         <th style={{ padding: '10px', textAlign: 'left' }}>Item</th>
-                        <th style={{ padding: '10px', textAlign: 'center' }}>HSN</th>
-                        <th style={{ padding: '10px', textAlign: 'right' }}>Rate</th>
+                        {data.type !== 'LENDING' && <th style={{ padding: '10px', textAlign: 'center' }}>HSN</th>}
+                        {data.type !== 'LENDING' && <th style={{ padding: '10px', textAlign: 'right' }}>Rate</th>}
                         <th style={{ padding: '10px', textAlign: 'center' }}>Qty</th>
-                        <th style={{ padding: '10px', textAlign: 'right' }}>Amount</th>
+                        {data.type !== 'LENDING' && <th style={{ padding: '10px', textAlign: 'right' }}>Amount</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -76,10 +76,10 @@ export const Template3 = ({ data }) => {
                                 <td style={{ padding: '10px' }}>
                                     <div style={{ fontWeight: 'bold' }}>{item.name}</div>
                                 </td>
-                                <td style={{ padding: '10px', textAlign: 'center' }}>{item.hsn || '-'}</td>
-                                <td style={{ padding: '10px', textAlign: 'right' }}>{formatCurrency(item.rate)}</td>
+                                {data.type !== 'LENDING' && <td style={{ padding: '10px', textAlign: 'center' }}>{item.hsn || '-'}</td>}
+                                {data.type !== 'LENDING' && <td style={{ padding: '10px', textAlign: 'right' }}>{formatCurrency(item.rate)}</td>}
                                 <td style={{ padding: '10px', textAlign: 'center' }}>{item.quantity}</td>
-                                <td style={{ padding: '10px', textAlign: 'right' }}>{formatCurrency(item.quantity * item.rate)}</td>
+                                {data.type !== 'LENDING' && <td style={{ padding: '10px', textAlign: 'right' }}>{formatCurrency(item.quantity * item.rate)}</td>}
                             </tr>
                             {/* Jewellery Detail Row */}
                             {(item.netWeight || item.makingChargePerGram) > 0 && (
@@ -102,39 +102,57 @@ export const Template3 = ({ data }) => {
             </table>
 
             {/* Totals */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '30px' }}>
-                <div style={{ width: '300px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                        <span>Subtotal</span>
-                        <span>{formatCurrency(totals.subtotal)}</span>
-                    </div>
-                    {totals.igst > 0 ? (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                            <span>IGST</span>
-                            <span>{formatCurrency(totals.igst)}</span>
+            {data.type === 'LENDING' ? (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '30px' }}>
+                    <div style={{ width: '300px', background: '#fff7ed', padding: '10px', borderRadius: '4px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid #fed7aa', paddingBottom: '8px', color: '#c2410c' }}>Weight Summary</h4>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span>Gross Weight:</span>
+                            <strong>{data.weightSummary?.grossWeight || '0'} g</strong>
                         </div>
-                    ) : (
-                        <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                                <span>CGST (1.5%)</span>
-                                <span>{formatCurrency(totals.cgst)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
-                                <span>SGST (1.5%)</span>
-                                <span>{formatCurrency(totals.sgst)}</span>
-                            </div>
-                        </>
-                    )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #c2410c', marginTop: '10px', color: '#c2410c', fontWeight: 'bold', fontSize: '16px' }}>
-                        <span>Total</span>
-                        <span>{formatCurrency(totals.total)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Net Weight:</span>
+                            <strong>{data.weightSummary?.netWeight || '0'} g</strong>
+                        </div>
                     </div>
                 </div>
-            </div>
+            ) : (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '30px' }}>
+                    <div style={{ width: '300px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                            <span>Subtotal</span>
+                            <span>{formatCurrency(totals.subtotal)}</span>
+                        </div>
+                        {data.type !== 'PROFORMA' && (totals.igst > 0 ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                                <span>IGST</span>
+                                <span>{formatCurrency(totals.igst)}</span>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                                    <span>CGST (1.5%)</span>
+                                    <span>{formatCurrency(totals.cgst)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0' }}>
+                                    <span>SGST (1.5%)</span>
+                                    <span>{formatCurrency(totals.sgst)}</span>
+                                </div>
+                            </>
+                        ))}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #c2410c', marginTop: '10px', color: '#c2410c', fontWeight: 'bold', fontSize: '16px' }}>
+                            <span>Total</span>
+                            <span>{formatCurrency(totals.total)}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-            <div style={{ background: '#fff7ed', padding: '10px', borderRadius: '4px', textAlign: 'center', marginBottom: '30px', fontStyle: 'italic' }}>
-                {numberToWords(Math.round(totals.total))} Rupees Only
-            </div>
+            {data.type !== 'LENDING' && (
+                <div style={{ background: '#fff7ed', padding: '10px', borderRadius: '4px', textAlign: 'center', marginBottom: '30px', fontStyle: 'italic' }}>
+                    {numberToWords(Math.round(totals.total))} Rupees Only
+                </div>
+            )}
 
             {/* Footer */}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>

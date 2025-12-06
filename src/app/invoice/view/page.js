@@ -52,10 +52,13 @@ function InvoiceViewContent() {
                     reader.readAsDataURL(blob);
                     reader.onloadend = async () => {
                         const base64data = reader.result;
-                        // Write file to cache directory
+                        // Strip the prefix to get pure base64
+                        const pureBase64 = base64data.split(',')[1];
+
+                        // Write file to cache directory for sharing
                         const result = await Filesystem.writeFile({
                             path: fileName,
-                            data: base64data,
+                            data: pureBase64,
                             directory: Directory.Cache
                         });
 
@@ -63,7 +66,7 @@ function InvoiceViewContent() {
                         await Share.share({
                             title: `Invoice ${invoice.invoiceNumber}`,
                             text: `Please find attached invoice ${invoice.invoiceNumber}`,
-                            url: result.uri, // Share the file URI
+                            url: result.uri,
                             dialogTitle: 'Send Invoice'
                         });
                     };
@@ -81,7 +84,6 @@ function InvoiceViewContent() {
                         files: [file]
                     });
                 } else {
-                    // Fallback for desktop browsers that don't support share
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -95,6 +97,44 @@ function InvoiceViewContent() {
             if (error.name !== 'AbortError') {
                 alert('Failed to share invoice');
             }
+        }
+    };
+
+    const handleDownload = async () => {
+        try {
+            const settings = await db.settings.get('templateId');
+            const company = await db.settings.get('companyDetails');
+            const templateId = settings ? settings.value : 'modern';
+            const companyDetails = company ? company.value : {};
+
+            const isNative = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNative;
+
+            if (isNative) {
+                const blob = await generatePDF({ ...invoice, templateId, companyDetails, returnBlob: true });
+                const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async () => {
+                    const base64data = reader.result;
+                    const pureBase64 = base64data.split(',')[1];
+                    try {
+                        const result = await Filesystem.writeFile({
+                            path: fileName,
+                            data: pureBase64,
+                            directory: Directory.Documents
+                        });
+                        alert(`Invoice saved to Documents folder: ${fileName}`);
+                    } catch (e) {
+                        console.error('Save failed', e);
+                        alert('Failed to save invoice: ' + e.message);
+                    }
+                };
+            } else {
+                await generatePDF({ ...invoice, templateId, companyDetails }); // Uses built-in save
+            }
+        } catch (error) {
+            console.error("Download failed", error);
+            alert("Failed to download invoice");
         }
     };
 
@@ -115,11 +155,7 @@ function InvoiceViewContent() {
         { label: 'Edit', icon: FiEdit, onClick: () => router.push(`/invoice/edit?id=${invoice.id}`) },
         {
             label: 'View PDF', icon: FiDownload, onClick: async () => {
-                const settings = await db.settings.get('templateId');
-                const company = await db.settings.get('companyDetails');
-                const templateId = settings ? settings.value : 'modern';
-                const companyDetails = company ? company.value : {};
-                await generatePDF({ ...invoice, templateId, companyDetails });
+                await handleDownload();
                 setIsMenuOpen(false);
             }
         },
@@ -311,13 +347,7 @@ function InvoiceViewContent() {
                 display: 'flex', gap: 12, overflowX: 'auto'
             }}>
                 <button
-                    onClick={async () => {
-                        const settings = await db.settings.get('templateId');
-                        const company = await db.settings.get('companyDetails');
-                        const templateId = settings ? settings.value : 'modern';
-                        const companyDetails = company ? company.value : {};
-                        await generatePDF({ ...invoice, templateId, companyDetails });
-                    }}
+                    onClick={handleDownload}
                     style={{
                         flex: 1, padding: '12px', borderRadius: 24, border: '1px solid #e5e7eb',
                         background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

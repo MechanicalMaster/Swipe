@@ -30,19 +30,21 @@ export const Template1 = ({ data }) => {
                 <div style={{ flex: 1 }}>
                     {companyDetails.logo && <img src={companyDetails.logo} alt="Logo" style={{ height: '60px', marginBottom: '10px' }} />}
                     <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px 0', color: '#111827' }}>{companyDetails.name}</h2>
-                    <p style={{ margin: 0 }}><strong>GSTIN:</strong> {companyDetails.gstin}</p>
+                    {data.type !== 'PROFORMA' && <p style={{ margin: 0 }}><strong>GSTIN:</strong> {companyDetails.gstin}</p>}
                     <p style={{ margin: 0, maxWidth: '300px' }}>{formatAddress(companyDetails.billingAddress)}</p>
                     <p style={{ margin: 0 }}><strong>Mobile:</strong> {companyDetails.phone}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <h1 style={{ fontSize: '24px', color: '#2563eb', margin: '0 0 4px 0', fontWeight: 800 }}>TAX INVOICE</h1>
+                    <h1 style={{ fontSize: '24px', color: '#2563eb', margin: '0 0 4px 0', fontWeight: 800 }}>
+                        {data.type === 'PROFORMA' ? 'PRO FORMA INVOICE' : data.type === 'LENDING' ? 'LENDING BILL' : 'TAX INVOICE'}
+                    </h1>
                     <p style={{ fontSize: '10px', textTransform: 'uppercase', color: '#6b7280', margin: 0 }}>{invoiceCopyType}</p>
 
                     <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'auto auto', gap: '4px 12px', justifyContent: 'end', textAlign: 'right' }}>
-                        <span style={{ fontWeight: 600 }}>Invoice #:</span> <span>{invoiceNumber}</span>
-                        <span style={{ fontWeight: 600 }}>Invoice Date:</span> <span>{date}</span>
-                        <span style={{ fontWeight: 600 }}>Due Date:</span> <span>{dueDate}</span>
-                        <span style={{ fontWeight: 600 }}>Place of Supply:</span> <span>{placeOfSupply}</span>
+                        <span style={{ fontWeight: 600 }}>{data.type === 'PROFORMA' ? 'Pro Forma #:' : data.type === 'LENDING' ? 'Bill #:' : 'Invoice #:'}</span> <span>{invoiceNumber}</span>
+                        <span style={{ fontWeight: 600 }}>Date:</span> <span>{date}</span>
+                        {data.type !== 'LENDING' && <><span style={{ fontWeight: 600 }}>Due Date:</span> <span>{dueDate}</span></>}
+                        {data.type !== 'PROFORMA' && data.type !== 'LENDING' && <><span style={{ fontWeight: 600 }}>Place of Supply:</span> <span>{placeOfSupply}</span></>}
                     </div>
                 </div>
             </div>
@@ -54,7 +56,7 @@ export const Template1 = ({ data }) => {
                     {customer ? (
                         <>
                             <p style={{ fontWeight: 700, margin: '0 0 2px 0' }}>{customer.name}</p>
-                            <p style={{ margin: '0 0 2px 0' }}><strong>GSTIN:</strong> {customer.gstin}</p>
+                            {data.type !== 'PROFORMA' && <p style={{ margin: '0 0 2px 0' }}><strong>GSTIN:</strong> {customer.gstin}</p>}
                             <p style={{ margin: '0 0 2px 0' }}><strong>Ph:</strong> {customer.phone}</p>
                             <p style={{ margin: 0, maxWidth: '300px' }}>{formatAddress(customer.billingAddress)}</p>
                         </>
@@ -76,11 +78,11 @@ export const Template1 = ({ data }) => {
                 <thead>
                     <tr style={{ background: '#2563eb', color: 'white' }}>
                         <th style={{ padding: '8px', textAlign: 'left', fontSize: '12px' }}>#</th>
-                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '12px', width: '40%' }}>Item</th>
-                        <th style={{ padding: '8px', textAlign: 'center', fontSize: '12px' }}>HSN/SAC</th>
-                        <th style={{ padding: '8px', textAlign: 'right', fontSize: '12px' }}>Rate</th>
+                        <th style={{ padding: '8px', textAlign: 'left', fontSize: '12px', width: data.type === 'LENDING' ? '70%' : '40%' }}>Item</th>
+                        {data.type !== 'LENDING' && <th style={{ padding: '8px', textAlign: 'center', fontSize: '12px' }}>HSN/SAC</th>}
+                        {data.type !== 'LENDING' && <th style={{ padding: '8px', textAlign: 'right', fontSize: '12px' }}>Rate</th>}
                         <th style={{ padding: '8px', textAlign: 'center', fontSize: '12px' }}>Qty</th>
-                        <th style={{ padding: '8px', textAlign: 'right', fontSize: '12px' }}>Amount</th>
+                        {data.type !== 'LENDING' && <th style={{ padding: '8px', textAlign: 'right', fontSize: '12px' }}>Amount</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -91,10 +93,10 @@ export const Template1 = ({ data }) => {
                                 <td style={{ padding: '8px' }}>
                                     <div style={{ fontWeight: 600 }}>{item.name}</div>
                                 </td>
-                                <td style={{ padding: '8px', textAlign: 'center' }}>{item.hsn || '-'}</td>
-                                <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.rate)}</td>
+                                {data.type !== 'LENDING' && <td style={{ padding: '8px', textAlign: 'center' }}>{item.hsn || '-'}</td>}
+                                {data.type !== 'LENDING' && <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.rate)}</td>}
                                 <td style={{ padding: '8px', textAlign: 'center' }}>{item.quantity}</td>
-                                <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(item.quantity * item.rate)}</td>
+                                {data.type !== 'LENDING' && <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(item.quantity * item.rate)}</td>}
                             </tr>
                             {/* Jewellery Detail Row */}
                             {(item.netWeight || item.makingChargePerGram) > 0 && (
@@ -119,51 +121,69 @@ export const Template1 = ({ data }) => {
             {/* Totals & Tax Summary */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Total Items / Qty: {items.length} / {items.reduce((acc, item) => acc + item.quantity, 0)}</div>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Total Items / Qty: {items.length} / {items.reduce((acc, item) => acc + (item.quantity || 0), 0)}</div>
                 </div>
-                <div style={{ width: '350px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
-                        <span>Taxable Amount</span>
-                        <span style={{ fontWeight: 600 }}>{formatCurrency(totals.subtotal)}</span>
-                    </div>
-                    {/* Conditional Tax Rendering */}
-                    {totals.igst > 0 ? (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
-                            <span>IGST</span>
-                            <span>{formatCurrency(totals.igst)}</span>
+                {data.type === 'LENDING' ? (
+                    <div style={{ width: '350px', background: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>Weight Summary</h4>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span>Gross Weight:</span>
+                            <strong>{data.weightSummary?.grossWeight || '0'} g</strong>
                         </div>
-                    ) : (
-                        <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
-                                <span>CGST (1.5%)</span>
-                                <span>{formatCurrency(totals.cgst)}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
-                                <span>SGST (1.5%)</span>
-                                <span>{formatCurrency(totals.sgst)}</span>
-                            </div>
-                        </>
-                    )}
-
-                    {totals.roundOffAmount !== 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
-                            <span>Round Off</span>
-                            <span>{totals.roundOffAmount.toFixed(2)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Net Weight:</span>
+                            <strong>{data.weightSummary?.netWeight || '0'} g</strong>
                         </div>
-                    )}
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '2px solid #e5e7eb', marginTop: '8px', fontSize: '16px', fontWeight: 800 }}>
-                        <span>Total</span>
-                        <span>{formatCurrency(totals.total)}</span>
                     </div>
-                </div>
+                ) : (
+                    <div style={{ width: '350px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
+                            <span>Taxable Amount</span>
+                            <span style={{ fontWeight: 600 }}>{formatCurrency(totals.subtotal)}</span>
+                        </div>
+                        {/* Conditional Tax Rendering */}
+                        {data.type !== 'PROFORMA' && (totals.igst > 0 ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
+                                <span>IGST</span>
+                                <span>{formatCurrency(totals.igst)}</span>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
+                                    <span>CGST (1.5%)</span>
+                                    <span>{formatCurrency(totals.cgst)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
+                                    <span>SGST (1.5%)</span>
+                                    <span>{formatCurrency(totals.sgst)}</span>
+                                </div>
+                            </>
+                        ))}
+
+                        {totals.roundOffAmount !== 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
+                                <span>Round Off</span>
+                                <span>{totals.roundOffAmount.toFixed(2)}</span>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '2px solid #e5e7eb', marginTop: '8px', fontSize: '16px', fontWeight: 800 }}>
+                            <span>Total</span>
+                            <span>{formatCurrency(totals.total)}</span>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* Amount in Words */}
-            <div style={{ borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', padding: '8px 0', marginBottom: '20px', fontStyle: 'italic' }}>
-                <span style={{ fontWeight: 600 }}>Total amount (in words): </span>
-                INR {numberToWords(Math.round(totals.total))} Only.
-            </div>
+            {/* Amount in Words - Hide for Lending */}
+            {
+                data.type !== 'LENDING' && (
+                    <div style={{ borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', padding: '8px 0', marginBottom: '20px', fontStyle: 'italic' }}>
+                        <span style={{ fontWeight: 600 }}>Total amount (in words): </span>
+                        INR {numberToWords(Math.round(totals.total))} Only.
+                    </div>
+                )
+            }
 
             {/* Footer: Bank & Signature */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px' }}>
@@ -218,6 +238,6 @@ export const Template1 = ({ data }) => {
             <div style={{ marginTop: '20px', fontSize: '10px', textAlign: 'center', color: '#9ca3af' }}>
                 This is a digitally signed document
             </div>
-        </div>
+        </div >
     );
 };

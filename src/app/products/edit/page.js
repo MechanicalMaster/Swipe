@@ -325,7 +325,7 @@ export default function EditProductPage() {
                 </div>
             </div>
 
-            {/* Gemstone Attributes (Collapsible) */}
+            {/* Gemstone Attributes (Collapsible)*/}
             <div className={styles.card} style={{ padding: 0, overflow: 'hidden' }}>
                 <div
                     onClick={() => setFormData({ ...formData, hasStones: !formData.hasStones })}
@@ -455,7 +455,7 @@ export default function EditProductPage() {
                 )}
             </div>
 
-            {/* Pricing & Inventory */}
+            {/* Pricing & Inventory*/}
             <div className={styles.sectionTitle}>Pricing & Inventory</div>
             <div className={styles.card}>
                 <input
@@ -491,7 +491,7 @@ export default function EditProductPage() {
                 </div>
             </div>
 
-            {/* Taxation & Compliance */}
+            {/* Taxation & Compliance*/}
             <div className={styles.sectionTitle}>Taxation & Compliance</div>
             <div className={styles.card}>
                 <div style={{ display: 'flex', gap: 12 }}>
@@ -529,7 +529,7 @@ export default function EditProductPage() {
                 />
             </div>
 
-            {/* Media & Attachments */}
+            {/* Media & Attachments*/}
             <div className={styles.sectionTitle}>Product Images</div>
             <div className={styles.card}>
                 <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>
@@ -551,7 +551,7 @@ export default function EditProductPage() {
                 </div>
             </div>
 
-            {/* Optional Metadata */}
+            {/* Optional Metadata*/}
             <div className={styles.sectionTitle}>Optional Details</div>
             <div className={styles.card}>
                 <input

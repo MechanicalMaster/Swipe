@@ -1,0 +1,105 @@
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.navButton {
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #4b5563;
+}
+
+.navButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f3f4f6;
+}
+
+.navButton:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.pageInfo {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.jumpContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.jumpLabel {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.jumpInput {
+    width: 50px;
+    padding: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+    background: #fff;
+    color: #000;
+}
+
+.jumpInput:focus {
+    outline: none;
+    border-color: #ca8a04;
+}
+
+.recentButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    margin-left: auto;
+    /* Push to right */
+}
+
+.recentButton:hover {
+    background: #f9fafb;
+    color: #111827;
+}
+
+@media (max-width: 600px) {
+    .container {
+        justify-content: center;
+    }
+
+    .recentButton {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+    }
+}

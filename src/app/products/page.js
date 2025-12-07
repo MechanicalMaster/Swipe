@@ -1,83 +1,192 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
-import { formatCurrency } from '@/lib/utils/tax';
-import { FiSearch, FiMoreHorizontal, FiPlus, FiHeadphones, FiShoppingBag } from 'react-icons/fi';
+import { useMasterStore } from '@/lib/store/masterStore';
+import { FiMenu, FiPlus, FiSearch, FiMoreHorizontal } from 'react-icons/fi';
+import ProductCard from './components/ProductCard';
+import FilterBar from './components/FilterBar';
+import Pagination from './components/Pagination';
 import styles from './page.module.css';
 
+const ITEMS_PER_PAGE = 12;
+
 export default function ProductsPage() {
-    const { products, loadProducts } = useProductStore();
+    const router = useRouter();
+    const { products, loadProducts, addProduct } = useProductStore();
+    const { categories, loadCategories } = useMasterStore();
+
     const [search, setSearch] = useState('');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    // Filter State
+    const [filters, setFilters] = useState({
+        purity: [],
+        weight: [],
+        gender: [],
+        category: []
+    });
+
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         loadProducts();
+        loadCategories();
     }, []);
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase())
+    // --- Filtering Logic ---
+    const filteredProducts = useMemo(() => {
+        return products.filter(product => {
+            // 1. Search
+            if (search && !product.name.toLowerCase().includes(search.toLowerCase())) return false;
+
+            // 2. Purity
+            if (filters.purity.length > 0) {
+                // Approximate match (e.g. "22K" in "22K")
+                const productPurity = product.purity || '';
+                if (!filters.purity.some(f => productPurity.includes(f))) return false;
+            }
+
+            // 3. Weight
+            if (filters.weight.length > 0) {
+                const weight = Number(product.grossWeight || 0);
+                const matchesWeight = filters.weight.some(range => {
+                    if (range === '0-5g') return weight >= 0 && weight <= 5;
+                    if (range === '5-10g') return weight > 5 && weight <= 10;
+                    return false;
+                });
+                if (!matchesWeight) return false;
+            }
+
+            // 4. Gender (Inferred from Category or Name)
+            if (filters.gender.length > 0) {
+                const genderText = (product.category + ' ' + product.name + ' ' + (product.tags || '')).toLowerCase();
+                const matchesGender = filters.gender.some(g => genderText.includes(g.toLowerCase()));
+
+                // If distinct gender field existed, we'd use it. For now, we infer.
+                // If inference fails, we might hide it, but rigorous filtering might hide too much.
+                // strict inference:
+                if (!matchesGender) return false;
+            }
+
+            // 5. Category
+            if (filters.category.length > 0) {
+                if (!filters.category.includes(product.category)) return false;
+            }
+
+            return true;
+        });
+    }, [products, search, filters]);
+
+    // --- Pagination Logic ---
+    const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+    const paginatedProducts = filteredProducts.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
     );
+
+    // --- Handlers ---
+    const handleAddToTray = (product) => {
+        console.log("Added to tray:", product.name);
+        // TODO: Implement Tray Logic
+    };
+
+    const handleShare = async (product) => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: product.name,
+                    text: `Check out this ${product.name}`,
+                    url: window.location.href // or specific product link
+                });
+            } catch (err) {
+                console.log('Share failed:', err);
+            }
+        } else {
+            alert("Sharing not supported on this device.");
+        }
+    };
 
     return (
         <div className={styles.container}>
+            {/* Header */}
             <div className={styles.header}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <Link href="/"><FiArrowLeft size={24} /></Link>
-                    Products & Services
+                <div className={styles.headerLeft}>
+                    <Link href="/">
+                        <FiMenu size={24} className={styles.menuIcon} />
+                    </Link>
+                    <span className={styles.headerTitle}>Products & Services</span>
                 </div>
-                <div style={{ display: 'flex', gap: 16 }}>
+                <div className={styles.headerActions}>
                     <FiSearch size={24} />
                     <FiMoreHorizontal size={24} />
                 </div>
             </div>
 
-            <div className={styles.searchBar}>
-                <FiSearch color="#9ca3af" size={20} />
-                <input
-                    className={styles.searchInput}
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+            {/* Search Bar - Matches uploaded_image_2 */}
+            <div className={styles.searchContainer}>
+                <div className={styles.searchBar}>
+                    <FiSearch color="#9ca3af" size={20} />
+                    <input
+                        className={styles.searchInput}
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div className={styles.filterSection}>
+                <FilterBar
+                    filters={filters}
+                    onFilterChange={(newFilters) => {
+                        setFilters(newFilters);
+                        setCurrentPage(1); // Reset page on filter change
+                    }}
+                    categories={categories}
                 />
             </div>
 
+            {/* Product Grid */}
+            <div className={styles.grid}>
+                {paginatedProducts.map(product => (
+                    <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToTray={handleAddToTray}
+                        onShare={handleShare}
+                    />
+                ))}
+            </div>
 
+            {/* Empty State */}
+            {filteredProducts.length === 0 && (
+                <div className={styles.emptyState}>
+                    No products found.
+                </div>
+            )}
 
-            {filteredProducts.map((product) => (
-                <Link key={product.id} href={`/products/edit?id=${product.id}`}>
-                    <div className={styles.productCard}>
-                        <div className={styles.productIcon}>
-                            {product.images && product.images.length > 0 ? (
-                                <img src={product.images[0].data} alt="" style={{ width: '100%', height: '100%', borderRadius: 8, objectFit: 'cover' }} />
-                            ) : (
-                                <FiShoppingBag />
-                            )}
-                        </div>
-                        <div className={styles.productInfo}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div>
-                                    <div className={styles.stockBadge}>Qty: 0.00</div>
-                                    <div className={styles.productName}>{product.name}</div>
-                                </div>
-                                <div className={styles.productPrice}>{formatCurrency(product.sellingPrice || 0)}</div>
-                            </div>
-                        </div>
-                    </div>
-                </Link>
-            ))}
+            {/* Pagination */}
+            {filteredProducts.length > 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    onRecentlyViewed={() => console.log('Recently Viewed')}
+                />
+            )}
 
+            {/* Floating Create Button */}
             <Link href="/products/add">
                 <div className={styles.fab}>
-                    <FiPlus /> NEW PRODUCT
+                    <FiPlus size={18} />
+                    NEW PRODUCT
                 </div>
             </Link>
         </div>
-    );
-}
-
-function FiArrowLeft({ size }) {
-    return (
-        <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height={size} width={size} xmlns="http://www.w3.org/2000/svg"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
     );
 }

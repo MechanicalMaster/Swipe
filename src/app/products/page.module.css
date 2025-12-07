@@ -1,234 +1,202 @@
 .container {
-    padding: 16px;
-    padding-bottom: 80px;
-    background: var(--background);
+    background-color: #f8fafc;
     min-height: 100vh;
+    padding-bottom: 80px;
+    /* Space for bottom nav */
 }
 
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--foreground);
+    /* Adjusted for icon on right if needed */
+    padding: 16px;
+    background: white;
+    /* border-bottom: 1px solid #f3f4f6; Removed to blend with search area if needed, but safe to keep */
 }
 
-.searchBar {
-    background: var(--card-bg);
-    padding: 12px 16px;
-    border-radius: 16px;
+.headerLeft {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    border: 1px solid var(--border);
+}
+
+.headerTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.menuIcon {
+    color: #374151;
+    cursor: pointer;
+}
+
+.headerActions {
+    display: flex;
+    gap: 16px;
+    color: #374151;
+}
+
+/* Search Bar */
+.searchContainer {
+    padding: 0 16px 12px;
+    background: white;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.searchBar {
+    display: flex;
+    align-items: center;
+    background-color: #f9fafb;
+    /* Light grey */
+    border: 1px solid #e5e7eb;
+    border-radius: 24px;
+    /* Pill shape */
+    padding: 10px 16px;
+    gap: 8px;
 }
 
 .searchInput {
     border: none;
+    background: transparent;
     outline: none;
     width: 100%;
-    font-size: 14px;
-    color: var(--foreground);
-}
-
-.banner {
-    background: var(--primary-light);
-    padding: 16px 20px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    border: 1px solid #DBEAFE;
-}
-
-.bannerTitle {
-    font-weight: 600;
-    color: #1E40AF;
-    margin-bottom: 4px;
-    font-size: 14px;
-}
-
-.bannerText {
-    font-size: 12px;
-    color: #3B82F6;
-    max-width: 240px;
-    font-weight: 500;
-}
-
-.productCard {
-    background: var(--card-bg);
-    padding: 16px;
-    border-radius: 16px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.productIcon {
-    width: 56px;
-    height: 56px;
-    background: #F3F4F6;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    color: var(--text-secondary);
-    margin-right: 16px;
-    border: 1px solid var(--border);
-}
-
-.productInfo {
-    flex: 1;
-}
-
-.productName {
-    font-weight: 600;
-    color: var(--foreground);
-    margin-bottom: 4px;
-    font-size: 14px;
-}
-
-.productPrice {
-    font-weight: 700;
-    color: var(--foreground);
     font-size: 15px;
+    color: #1f2937;
 }
 
-.stockBadge {
-    font-size: 10px;
-    padding: 4px 8px;
-    background: #F3F4F6;
-    border-radius: 6px;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-    display: inline-block;
-    font-weight: 600;
+.searchInput::placeholder {
+    color: #9ca3af;
 }
 
+.filterSection {
+    background: white;
+    z-index: 20;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    padding: 16px;
+}
+
+@media (min-width: 640px) {
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+    }
+}
+
+.emptyState {
+    padding: 40px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* FAB */
 .fab {
     position: fixed;
-    bottom: 80px;
+    bottom: 90px;
     right: 16px;
-    background: var(--primary);
+    background-color: #0d6efd;
     color: white;
     padding: 12px 24px;
     border-radius: 24px;
-    font-weight: 600;
     display: flex;
     align-items: center;
     gap: 8px;
+    font-weight: 600;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 20;
+    z-index: 100;
+    cursor: pointer;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Form Styles */
+/* --- Restored Form Styles for Edit/Add Pages --- */
 .sectionTitle {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--foreground);
-    margin: 24px 0 12px 4px;
+    margin-bottom: 8px;
+    color: #111827;
+    margin-left: 4px;
+    margin-top: 24px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .card {
-    background: var(--card-bg);
-    border-radius: 16px;
-    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
     margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+}
+
+.input,
+.select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    margin-bottom: 12px;
+    background: #fff;
+    /* White background */
+    color: #1f2937;
+    transition: all 0.2s;
+}
+
+.input:focus,
+.select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.input::placeholder {
+    color: #9ca3af;
 }
 
 .radioGroup {
     display: flex;
     gap: 24px;
+    margin-bottom: 16px;
 }
 
 .radioLabel {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 15px;
     font-weight: 500;
-    color: var(--foreground);
+    color: #111827;
     cursor: pointer;
 }
 
-.input {
-    width: 100%;
-    height: 52px;
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    font-size: 14px;
-    outline: none;
-    margin-bottom: 16px;
-    background: #F9FAFB;
-    color: var(--foreground);
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-}
-
-.input:last-child {
-    margin-bottom: 0;
-}
-
-.input:focus {
-    border-color: var(--primary);
-    background: white;
-}
-
-.select {
-    width: 100%;
-    height: 52px;
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    font-size: 14px;
-    outline: none;
-    background: #F9FAFB;
-    margin-bottom: 16px;
-    color: var(--foreground);
-    box-sizing: border-box;
-    appearance: none;
-    /* Remove default arrow to style consistently if needed, but for now just height */
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    background-size: 10px;
-}
-
-.link {
-    color: var(--primary);
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    margin-bottom: 16px;
+.radioLabel input {
+    width: 18px;
+    height: 18px;
+    accent-color: #2563eb;
 }
 
 .toggleRow {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 0;
+    padding: 8px 0;
 }
 
 .toggleLabel {
     font-size: 14px;
-    color: var(--foreground);
     font-weight: 500;
+    color: #374151;
 }
 
 .footer {
@@ -238,16 +206,17 @@
     right: 0;
     background: white;
     padding: 16px;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid #eee;
     z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 .saveButton {
     width: 100%;
-    background: var(--primary);
+    background: #0d6efd;
     color: white;
-    padding: 16px;
-    border-radius: 16px;
+    padding: 14px;
+    border-radius: 12px;
     font-weight: 600;
     border: none;
     cursor: pointer;

@@ -1,0 +1,97 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.scrollContainer {
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    white-space: nowrap;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE 10+ */
+    padding-bottom: 4px;
+    /* Space for scrollbar if visible on some OS */
+}
+
+.scrollContainer::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari */
+}
+
+.filterGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 8px;
+    border-right: 1px solid #f3f4f6;
+}
+
+.filterGroup:last-child {
+    border-right: none;
+}
+
+.groupLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.pill {
+    background: #f3f4f6;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pill:hover {
+    background: #e5e7eb;
+}
+
+.pill.active {
+    background: #ca8a04;
+    /* Gold */
+    color: white;
+}
+
+.chipContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #e5e7eb;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    color: #1f2937;
+}
+
+.chipClose {
+    background: none;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.chipClose:hover {
+    color: #1f2937;
+}

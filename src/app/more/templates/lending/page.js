@@ -5,30 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useSettingsStore } from '@/lib/store/settingsStore';
 import { templates } from '@/components/InvoiceTemplates';
 import { FiArrowLeft, FiCheck } from 'react-icons/fi';
-import styles from '../page.module.css'; // Reuse existing styles or create new
 
-// Dummy data for preview
-const dummyData = {
-    invoiceNumber: 'INV-001',
-    date: '2023-11-21',
-    customer: {
-        name: 'John Doe',
-        address: '123 Main St, City, Country'
-    },
-    items: [
-        { name: 'Product A', quantity: 2, rate: 100 },
-        { name: 'Service B', quantity: 1, rate: 500 }
-    ],
-    totals: {
-        subtotal: 700,
-        totalTax: 126,
-        total: 826
-    }
-};
-
-export default function TemplatesPage() {
+export default function LendingTemplatesPage() {
     const router = useRouter();
-    const { templateId, setTemplateId, loadSettings } = useSettingsStore();
+    const { lendingBillTemplateId, setLendingBillTemplateId, loadSettings } = useSettingsStore();
     const [selectedId, setSelectedId] = useState('modern');
 
     useEffect(() => {
@@ -36,13 +16,13 @@ export default function TemplatesPage() {
     }, []);
 
     useEffect(() => {
-        if (templateId) {
-            setSelectedId(templateId);
+        if (lendingBillTemplateId) {
+            setSelectedId(lendingBillTemplateId);
         }
-    }, [templateId]);
+    }, [lendingBillTemplateId]);
 
     const handleSave = async () => {
-        await setTemplateId(selectedId);
+        await setLendingBillTemplateId(selectedId);
         router.back();
     };
 
@@ -61,7 +41,7 @@ export default function TemplatesPage() {
                 position: 'sticky', top: 0, zIndex: 10
             }}>
                 <FiArrowLeft size={24} onClick={() => router.back()} style={{ cursor: 'pointer' }} />
-                <div style={{ fontWeight: 700, fontSize: 18 }}>Invoice Templates</div>
+                <div style={{ fontWeight: 700, fontSize: 18 }}>Lending Bill Template</div>
             </div>
 
             {/* Preview Area */}
@@ -80,15 +60,17 @@ export default function TemplatesPage() {
             </div>
 
             {/* Template Selector */}
-            {/* Invoice Template Selector */}
             <div style={{
                 background: 'white',
                 padding: '20px',
                 borderTop: '1px solid #e5e7eb',
                 zIndex: 10
             }}>
-                <div style={{ marginBottom: '16px', fontWeight: 600 }}>Choose Invoice Template</div>
-                <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '24px' }}>
+                <div style={{ marginBottom: '16px' }}>
+                    <div style={{ fontWeight: 600 }}>Choose Lending Bill Template</div>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>This template controls the layout and styling of your Lending Bill PDFs.</div>
+                </div>
+                <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px' }}>
                     {Object.values(templates).map((template) => (
                         <div
                             key={template.id}
@@ -135,8 +117,6 @@ export default function TemplatesPage() {
                         </div>
                     ))}
                 </div>
-
-
 
                 <button
                     onClick={handleSave}

@@ -12,6 +12,7 @@ db.version(9).stores({
   payment_allocations: '++id, paymentId, invoiceId',
   audit_logs: '++id, entityType, entityId, action, timestamp',
   attendance_log: '++id, userId, loginDate, loginTimestamp, logoutTimestamp, created_at',
+  bulk_upload_logs: '++id, userId, fileName, totalRecords, successCount, failureCount, timestamp',
   categories: '++id, name, type',
   subCategories: '++id, name, categoryId',
   sequences: 'key', // value

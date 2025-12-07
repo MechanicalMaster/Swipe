@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
 import { useMasterStore } from '@/lib/store/masterStore';
-import { FiMenu, FiPlus, FiSearch, FiMoreHorizontal } from 'react-icons/fi';
+import { FiMenu, FiPlus, FiSearch, FiMoreHorizontal, FiDownload, FiUpload } from 'react-icons/fi';
 import ProductCard from './components/ProductCard';
 import FilterBar from './components/FilterBar';
 import Pagination from './components/Pagination';
+import BottomSheet from '@/components/BottomSheet';
+import { BulkUploadService } from '@/lib/services/bulkUploadService';
 import styles from './page.module.css';
 
 const ITEMS_PER_PAGE = 12;
@@ -122,7 +124,7 @@ export default function ProductsPage() {
                 </div>
                 <div className={styles.headerActions}>
                     <FiSearch size={24} />
-                    <FiMoreHorizontal size={24} />
+                    <FiMoreHorizontal size={24} onClick={() => setIsMenuOpen(true)} />
                 </div>
             </div>
 
@@ -187,6 +189,21 @@ export default function ProductsPage() {
                     NEW PRODUCT
                 </div>
             </Link>
+
+            <BottomSheet isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+                <div style={{ display: 'flex', flexDirection: 'column', padding: '0 16px 20px' }}>
+                    <div className={styles.menuItem} onClick={() => { BulkUploadService.downloadAllProducts(); setIsMenuOpen(false); }}>
+                        <FiDownload size={20} />
+                        <span>Bulk Download</span>
+                    </div>
+                    <Link href="/products/bulk-upload" onClick={() => setIsMenuOpen(false)}>
+                        <div className={styles.menuItem}>
+                            <FiUpload size={20} />
+                            <span>Bulk Upload</span>
+                        </div>
+                    </Link>
+                </div>
+            </BottomSheet>
         </div>
     );
 }

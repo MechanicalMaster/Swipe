@@ -89,7 +89,7 @@ export default function PartiesPage() {
                         <PartyListItem
                             key={item.id}
                             party={item}
-                            onClick={() => router.push(`/parties/customer/view?id=${item.id}`)}
+                            onClick={() => router.push(`/parties/${activeTab === 'customers' ? 'customer' : 'vendor'}/view?id=${item.id}`)}
                         />
                     ))}
                 </div>
@@ -114,7 +114,7 @@ export default function PartiesPage() {
                         zIndex: 20
                     }}
                 >
-                    <FiPlus size={20} /> NEW CUSTOMER
+                    <FiPlus size={20} /> {activeTab === 'customers' ? 'NEW CUSTOMER' : 'NEW VENDOR'}
                 </button>
             </Link>
         </div>

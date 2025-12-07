@@ -81,10 +81,6 @@ export default function BillsPage() {
 
             {currentList.length === 0 ? (
                 <div className={styles.emptyState}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: 12 }}>
-                        <div className={styles.emptyText}>One-click<br />e-Invoicing & e-Way bills</div>
-                        <FiHeadphones size={24} />
-                    </div>
                     <div className={styles.emptySub}>
                         There are no {activeTab} for This Year. Please choose different dates or create a new {activeTab === 'sales' ? 'invoice' : 'purchase'}.
                     </div>

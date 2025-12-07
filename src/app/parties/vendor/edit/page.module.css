@@ -1,0 +1,192 @@
+.container {
+    background: #f3f4f6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    background: white;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+}
+
+.headerTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-left: 12px;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.importAction {
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+}
+
+.section {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.sectionTitle {
+    font-weight: 700;
+    font-size: 14px;
+    color: #111827;
+}
+
+.inputGroup {
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.input {
+    width: 100%;
+    padding: 16px 12px 4px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input:focus {
+    border-color: #2563eb;
+}
+
+.label {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    font-size: 14px;
+    color: #6b7280;
+    pointer-events: none;
+    transition: all 0.2s;
+}
+
+.input:focus+.label,
+.input:not(:placeholder-shown)+.label {
+    top: 4px;
+    font-size: 10px;
+    color: #2563eb;
+}
+
+.phoneInputContainer {
+    display: flex;
+    align-items: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: white;
+}
+
+.flag {
+    width: 24px;
+    height: 16px;
+    margin-right: 8px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.phonePrefix {
+    font-weight: 500;
+    margin-right: 8px;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.phoneInput {
+    border: none;
+    outline: none;
+    font-size: 16px;
+    width: 100%;
+}
+
+.gstContainer {
+    display: flex;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.gstInput {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+}
+
+.helperText {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+
+.addressButton {
+    width: 100%;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    text-align: left;
+    color: #6b7280;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.checkboxContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.updateButton {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: auto;
+    cursor: pointer;
+}

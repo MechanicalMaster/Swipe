@@ -1,0 +1,301 @@
+.container {
+    padding: 16px;
+    padding-bottom: 120px;
+    /* Space for fixed footer */
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.sectionTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.addButton {
+    width: 100%;
+    padding: 12px;
+    background: #eff6ff;
+    border: 1px dashed #3b82f6;
+    border-radius: 8px;
+    color: #2563eb;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.itemRow {
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+}
+
+.itemHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.itemInputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    align-items: center;
+}
+
+.input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* Optional Fields */
+.optionalRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.optionalLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #4b5563;
+}
+
+.optionalInput {
+    border: none;
+    text-align: right;
+    font-size: 14px;
+    outline: none;
+    width: 120px;
+}
+
+/* Toggles */
+.toggleRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.toggleRow:last-child {
+    margin-bottom: 0;
+}
+
+.toggleLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.toggleSwitch {
+    width: 44px;
+    height: 24px;
+    background: #e5e7eb;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.toggleSwitch.active {
+    background: #2563eb;
+}
+
+.toggleKnob {
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+}
+
+.toggleSwitch.active .toggleKnob {
+    transform: translateX(20px);
+}
+
+/* Payments */
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.paymentGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.inputWrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0 8px;
+}
+
+.paymentInput {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    outline: none;
+}
+
+.select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+}
+
+/* Footer */
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fef3c7;
+    padding: 16px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+}
+
+.footerLeft {
+    flex: 1;
+}
+
+.footerRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.totalAmount {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 4px;
+}
+
+.createButton {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* Vendor Selection Styles */
+.selectedVendor {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.vendorInfo {
+    flex: 1;
+}
+
+.vendorName {
+    font-weight: 600;
+    font-size: 16px;
+    color: #111827;
+}
+
+.vendorPhone {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.vendorActions {
+    display: flex;
+    gap: 12px;
+}
+
+.actionButton {
+    background: none;
+    border: none;
+    color: #f59e0b;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+/* Item Actions */
+.itemActions {
+    display: flex;
+    gap: 8px;
+}
+
+.itemActionBtn {
+    border: none;
+    background: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.itemActionBtn:hover {
+    color: #111827;
+}
+
+.itemActionBtn.delete {
+    color: #ef4444;
+}

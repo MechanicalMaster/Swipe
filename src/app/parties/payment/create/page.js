@@ -11,10 +11,15 @@ function RecordPaymentContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const customerId = searchParams.get('customerId');
+    const vendorId = searchParams.get('vendorId');
+    const partyType = searchParams.get('partyType') || 'customer'; // 'customer' or 'vendor'
     const mode = searchParams.get('mode') || 'in'; // 'in' (You Got) or 'out' (You Gave)
-    const { getCustomer, addPayment } = usePartyStore();
+    const { getCustomer, addPayment, getVendor, addVendorPayment } = usePartyStore();
 
-    const [customer, setCustomer] = useState(null);
+    const isVendor = partyType === 'vendor';
+    const partyId = isVendor ? vendorId : customerId;
+
+    const [party, setParty] = useState(null);
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [paymentType, setPaymentType] = useState('Cash');
@@ -24,11 +29,11 @@ function RecordPaymentContent() {
     const [sendEmail, setSendEmail] = useState(false);
 
     useEffect(() => {
-        if (customerId) {
-            const c = getCustomer(customerId);
-            if (c) setCustomer(c);
+        if (partyId) {
+            const p = isVendor ? getVendor(partyId) : getCustomer(partyId);
+            if (p) setParty(p);
         }
-    }, [customerId]);
+    }, [partyId, isVendor]);
 
     const handleRecord = async () => {
         if (!amount) {
@@ -36,26 +41,41 @@ function RecordPaymentContent() {
             return;
         }
 
-        const paymentData = {
-            customerId: parseInt(customerId),
-            amount: parseFloat(amount),
-            date,
-            type: paymentType,
-            notes,
-            internalNotes,
-            sendSms,
-            sendEmail,
-            timestamp: Date.now(),
-            mode: mode
-        };
-
-        await addPayment(paymentData);
+        if (isVendor) {
+            const paymentData = {
+                vendorId: parseInt(vendorId),
+                amount: parseFloat(amount),
+                date,
+                type: paymentType,
+                notes,
+                internalNotes,
+                sendSms,
+                sendEmail,
+                timestamp: Date.now(),
+                mode: mode
+            };
+            await addVendorPayment(paymentData);
+        } else {
+            const paymentData = {
+                customerId: parseInt(customerId),
+                amount: parseFloat(amount),
+                date,
+                type: paymentType,
+                notes,
+                internalNotes,
+                sendSms,
+                sendEmail,
+                timestamp: Date.now(),
+                mode: mode
+            };
+            await addPayment(paymentData);
+        }
         router.back();
     };
 
     const paymentTypes = ['UPI', 'Cash', 'Card', 'Net Banking', 'Cheque', 'EMI', 'TDS'];
 
-    if (!customer) return <div>Loading...</div>;
+    if (!party) return <div>Loading...</div>;
 
     const isIn = mode === 'in';
     const themeColor = isIn ? '#16a34a' : '#2563eb'; // Green : Blue
@@ -70,7 +90,7 @@ function RecordPaymentContent() {
                     <FiArrowLeft size={24} onClick={() => router.back()} style={{ cursor: 'pointer' }} />
                     <div>
                         <div className={styles.headerTitle}>Record Payment</div>
-                        <div className={styles.headerSubtitle}>INV-1, {customer.name}</div>
+                        <div className={styles.headerSubtitle}>{isVendor ? 'Vendor' : 'Customer'}: {party.name}</div>
                     </div>
                 </div>
                 <FiPlayCircle size={24} color="#ef4444" />
@@ -98,7 +118,7 @@ function RecordPaymentContent() {
                             placeholder={isIn ? "0" : "Enter Amount"}
                         />
                     </div>
-                    {isIn && <div className={styles.pendingText}>Pending ₹{customer.balance?.toFixed(2) || '0.00'}</div>}
+                    {isIn && <div className={styles.pendingText}>Pending ₹{party.balance?.toFixed(2) || '0.00'}</div>}
                 </div>
 
                 {/* Date Picker */}
@@ -195,7 +215,7 @@ function RecordPaymentContent() {
                 */}
                 <div className={styles.toggleGroup}>
                     <div>
-                        <div className={styles.toggleLabel}>SMS to Customer</div>
+                        <div className={styles.toggleLabel}>SMS to {isVendor ? 'Vendor' : 'Customer'}</div>
                         <div className={styles.toggleSubLabel}>We'll send a confirmation to their mobile no.</div>
                     </div>
                     <label className={styles.switch}>

@@ -12,19 +12,15 @@ const createItems = [
   { name: 'Purchase', icon: RiShoppingCartLine, href: '/bills/purchase/create' },
   { name: 'Quotation', icon: RiClipboardLine, href: '/coming-soon' },
   { name: 'Daily Login', icon: RiCalendarCheckLine, href: '/attendance' },
-  { name: 'Credit Note', icon: RiArrowGoBackLine, href: '/coming-soon' },
   { name: 'Lending Bill', icon: RiArchiveLine, href: '/invoice/create?type=lending' },
   { name: 'Expenses', icon: RiWallet3Line, href: '/more/bills/expenses/create' },
   { name: 'Pro Forma Invoice', icon: RiCalculatorLine, href: '/invoice/create?type=proforma' },
 ];
 
 const quickAccessItems = [
-  { name: 'E-way Bill', icon: RiCarLine, href: '/coming-soon' },
-  { name: 'E-Invoice', icon: RiFilePaper2Line, href: '/coming-soon' },
   { name: 'Payments Timeline', icon: RiSecurePaymentLine, href: '/coming-soon' },
   { name: 'Reports', icon: RiPieChartLine, href: '/reports' },
   { name: 'Insights', icon: RiLineChartLine, href: '/coming-soon' },
-  { name: 'Refer & Get ₹1000', icon: RiMoneyDollarCircleLine, href: '/coming-soon' },
   { name: 'Invoice Templates', icon: RiFileList3Line, href: '/coming-soon' },
   { name: 'Document Settings', icon: RiSettings3Line, href: '/coming-soon' },
 ];

@@ -5,10 +5,12 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePartyStore } from '@/lib/store/partyStore';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
+import { shareText, downloadCSV, downloadPDFBlob } from '@/lib/utils/invoiceActions';
 import { FiArrowLeft, FiPhone, FiMail, FiShare2, FiMessageCircle, FiEdit2, FiMoreHorizontal, FiFileText, FiFile, FiPlusSquare, FiGitMerge, FiTrash2 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TransactionCard } from '@/components/TransactionCard';
 import { InvoiceBottomSheet } from '@/components/InvoiceBottomSheet';
+import jsPDF from 'jspdf';
 
 function CustomerLedgerContent() {
     const router = useRouter();
@@ -51,31 +53,14 @@ function CustomerLedgerContent() {
     };
 
     const handleShare = async () => {
-        const shareData = {
+        await shareText({
             title: 'Customer Details',
             text: `Customer: ${customer.name}\nPhone: ${customer.phone || 'N/A'}\nBalance: ₹${customer.balance?.toFixed(2) || '0.00'}`,
             dialogTitle: 'Share Customer Details'
-        };
-
-        try {
-            // Dynamic import for Capacitor Share to avoid SSR issues or if not available
-            const { Share } = await import('@capacitor/share');
-            await Share.share(shareData);
-        } catch (error) {
-            console.log('Capacitor Share failed, trying navigator.share', error);
-            if (navigator.share) {
-                try {
-                    await navigator.share(shareData);
-                } catch (err) {
-                    console.error('Share failed:', err);
-                }
-            } else {
-                alert('Sharing is not supported on this device');
-            }
-        }
+        });
     };
 
-    const handleDownloadExcel = () => {
+    const handleDownloadExcel = async () => {
         const data = transactions.map(tx => ({
             Date: new Date(tx.date).toLocaleDateString(),
             Type: tx.type,
@@ -83,16 +68,75 @@ function CustomerLedgerContent() {
             Amount: tx.amount,
             Status: tx.status
         }));
-        import('@/lib/utils/exportUtils').then(utils => {
-            utils.exportToCSV(data, `${customer.name}_ledger.csv`);
-        });
+
+        if (!data || !data.length) {
+            alert('No transactions to export');
+            return;
+        }
+
+        // Build CSV content
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row => headers.map(fieldName => {
+                const value = row[fieldName];
+                return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+            }).join(','))
+        ].join('\n');
+
+        await downloadCSV(csvContent, `${customer.name}_ledger.csv`);
         setIsMenuOpen(false);
     };
 
-    const handleDownloadPDF = () => {
-        import('@/lib/utils/exportUtils').then(utils => {
-            utils.exportToPDF(customer, transactions, `${customer.name}_ledger.pdf`);
+    const handleDownloadPDF = async () => {
+        const doc = new jsPDF();
+
+        // Header
+        doc.setFontSize(20);
+        doc.text(customer.name, 14, 22);
+        doc.setFontSize(12);
+        doc.text(`Phone: ${customer.phone || 'N/A'}`, 14, 30);
+        doc.text(`Balance: ${customer.balance?.toFixed(2)}`, 14, 38);
+
+        // Table Header
+        let y = 50;
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Date', 14, y);
+        doc.text('Type', 60, y);
+        doc.text('Number', 100, y);
+        doc.text('Amount', 150, y);
+        doc.text('Balance', 180, y);
+
+        doc.line(14, y + 2, 200, y + 2);
+        y += 10;
+        doc.setTextColor(0);
+
+        // Table Rows
+        transactions.forEach(tx => {
+            if (y > 280) {
+                doc.addPage();
+                y = 20;
+            }
+
+            const date = new Date(tx.date).toLocaleDateString();
+            const type = tx.type === 'payment_in' ? 'Payment In' :
+                tx.type === 'payment_out' ? 'Payment Out' : 'Invoice';
+            const number = tx.number;
+            const amount = tx.amount.toFixed(2);
+            const balance = tx.balance !== undefined ? tx.balance.toFixed(2) : '-';
+
+            doc.text(date, 14, y);
+            doc.text(type, 60, y);
+            doc.text(number, 100, y);
+            doc.text(amount, 150, y);
+            doc.text(balance, 180, y);
+
+            y += 8;
         });
+
+        const pdfBlob = doc.output('blob');
+        await downloadPDFBlob(pdfBlob, `${customer.name}_ledger.pdf`);
         setIsMenuOpen(false);
     };
 

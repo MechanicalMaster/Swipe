@@ -4,15 +4,13 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/db';
 import { formatCurrency } from '@/lib/utils/tax';
-import { generatePDF } from '@/lib/utils/pdf';
+import { shareInvoicePDF, downloadInvoicePDF } from '@/lib/utils/invoiceActions';
 import BottomSheet from '@/components/BottomSheet';
 import {
     FiArrowLeft, FiEdit, FiMoreHorizontal, FiShare2, FiPrinter, FiDownload, FiPlus,
     FiCopy, FiClock, FiRefreshCw, FiSettings, FiMail, FiMessageSquare,
     FiTruck, FiFileText, FiXCircle
 } from 'react-icons/fi';
-import { Share } from '@capacitor/share';
-import { Filesystem, Directory } from '@capacitor/filesystem';
 import CancelInvoiceModal from '@/components/CancelInvoiceModal';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
 
@@ -35,107 +33,12 @@ function InvoiceViewContent() {
 
     const handleShare = async () => {
         if (!invoice) return;
-        try {
-            const settings = await db.settings.get('templateId');
-            const company = await db.settings.get('companyDetails');
-            const templateId = settings ? settings.value : 'modern';
-            const companyDetails = company ? company.value : {};
-            const blob = await generatePDF({ ...invoice, templateId, companyDetails, returnBlob: true });
-
-            // Check if running in Capacitor/Native environment
-            const isNative = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNative;
-
-            if (isNative) {
-                try {
-                    const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
-                    const reader = new FileReader();
-                    reader.readAsDataURL(blob);
-                    reader.onloadend = async () => {
-                        const base64data = reader.result;
-                        // Strip the prefix to get pure base64
-                        const pureBase64 = base64data.split(',')[1];
-
-                        // Write file to cache directory for sharing
-                        const result = await Filesystem.writeFile({
-                            path: fileName,
-                            data: pureBase64,
-                            directory: Directory.Cache
-                        });
-
-                        // Share the file
-                        await Share.share({
-                            title: `Invoice ${invoice.invoiceNumber}`,
-                            text: `Please find attached invoice ${invoice.invoiceNumber}`,
-                            url: result.uri,
-                            dialogTitle: 'Send Invoice'
-                        });
-                    };
-                } catch (e) {
-                    console.error('Native share failed', e);
-                    alert('Native share failed: ' + e.message);
-                }
-            } else {
-                // Web Fallback
-                const file = new File([blob], `Invoice-${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
-                if (navigator.share) {
-                    await navigator.share({
-                        title: `Invoice ${invoice.invoiceNumber}`,
-                        text: `Please find attached invoice ${invoice.invoiceNumber}`,
-                        files: [file]
-                    });
-                } else {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `Invoice-${invoice.invoiceNumber}.pdf`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-            }
-        } catch (error) {
-            console.error('Error sharing:', error);
-            if (error.name !== 'AbortError') {
-                alert('Failed to share invoice');
-            }
-        }
+        await shareInvoicePDF(invoice);
     };
 
     const handleDownload = async () => {
-        try {
-            const settings = await db.settings.get('templateId');
-            const company = await db.settings.get('companyDetails');
-            const templateId = settings ? settings.value : 'modern';
-            const companyDetails = company ? company.value : {};
-
-            const isNative = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNative;
-
-            if (isNative) {
-                const blob = await generatePDF({ ...invoice, templateId, companyDetails, returnBlob: true });
-                const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = async () => {
-                    const base64data = reader.result;
-                    const pureBase64 = base64data.split(',')[1];
-                    try {
-                        const result = await Filesystem.writeFile({
-                            path: fileName,
-                            data: pureBase64,
-                            directory: Directory.Documents
-                        });
-                        alert(`Invoice saved to Documents folder: ${fileName}`);
-                    } catch (e) {
-                        console.error('Save failed', e);
-                        alert('Failed to save invoice: ' + e.message);
-                    }
-                };
-            } else {
-                await generatePDF({ ...invoice, templateId, companyDetails }); // Uses built-in save
-            }
-        } catch (error) {
-            console.error("Download failed", error);
-            alert("Failed to download invoice");
-        }
+        if (!invoice) return;
+        await downloadInvoicePDF(invoice);
     };
 
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);

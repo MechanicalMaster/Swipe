@@ -5,9 +5,11 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePartyStore } from '@/lib/store/partyStore';
 import { usePurchaseStore } from '@/lib/store/purchaseStore';
+import { shareText, downloadCSV, downloadPDFBlob } from '@/lib/utils/invoiceActions';
 import { FiArrowLeft, FiPhone, FiMail, FiShare2, FiMessageCircle, FiEdit2, FiMoreHorizontal, FiFileText, FiFile, FiPlusSquare, FiGitMerge, FiTrash2 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TransactionCard } from '@/components/TransactionCard';
+import jsPDF from 'jspdf';
 
 function VendorLedgerContent() {
     const router = useRouter();
@@ -47,30 +49,14 @@ function VendorLedgerContent() {
     };
 
     const handleShare = async () => {
-        const shareData = {
+        await shareText({
             title: 'Vendor Details',
             text: `Vendor: ${vendor.name}\nPhone: ${vendor.phone || 'N/A'}\nBalance: ₹${vendor.balance?.toFixed(2) || '0.00'}`,
             dialogTitle: 'Share Vendor Details'
-        };
-
-        try {
-            const { Share } = await import('@capacitor/share');
-            await Share.share(shareData);
-        } catch (error) {
-            console.log('Capacitor Share failed, trying navigator.share', error);
-            if (navigator.share) {
-                try {
-                    await navigator.share(shareData);
-                } catch (err) {
-                    console.error('Share failed:', err);
-                }
-            } else {
-                alert('Sharing is not supported on this device');
-            }
-        }
+        });
     };
 
-    const handleDownloadExcel = () => {
+    const handleDownloadExcel = async () => {
         const data = transactions.map(tx => ({
             Date: new Date(tx.date).toLocaleDateString(),
             Type: tx.type,
@@ -78,16 +64,58 @@ function VendorLedgerContent() {
             Amount: tx.amount,
             Status: tx.status
         }));
-        import('@/lib/utils/exportUtils').then(utils => {
-            utils.exportToCSV(data, `${vendor.name}_ledger.csv`);
-        });
+
+        if (!data || !data.length) {
+            alert('No transactions to export');
+            return;
+        }
+
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row => headers.map(fieldName => {
+                const value = row[fieldName];
+                return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+            }).join(','))
+        ].join('\n');
+
+        await downloadCSV(csvContent, `${vendor.name}_ledger.csv`);
         setIsMenuOpen(false);
     };
 
-    const handleDownloadPDF = () => {
-        import('@/lib/utils/exportUtils').then(utils => {
-            utils.exportToPDF(vendor, transactions, `${vendor.name}_ledger.pdf`);
+    const handleDownloadPDF = async () => {
+        const doc = new jsPDF();
+
+        doc.setFontSize(20);
+        doc.text(vendor.name, 14, 22);
+        doc.setFontSize(12);
+        doc.text(`Phone: ${vendor.phone || 'N/A'}`, 14, 30);
+        doc.text(`Balance: ${vendor.balance?.toFixed(2)}`, 14, 38);
+
+        let y = 50;
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Date', 14, y);
+        doc.text('Type', 60, y);
+        doc.text('Number', 100, y);
+        doc.text('Amount', 150, y);
+        doc.text('Balance', 180, y);
+        doc.line(14, y + 2, 200, y + 2);
+        y += 10;
+        doc.setTextColor(0);
+
+        transactions.forEach(tx => {
+            if (y > 280) { doc.addPage(); y = 20; }
+            doc.text(new Date(tx.date).toLocaleDateString(), 14, y);
+            doc.text(tx.type === 'payment_out' ? 'Payment Out' : tx.type === 'payment_in' ? 'Payment In' : 'Purchase', 60, y);
+            doc.text(tx.number, 100, y);
+            doc.text(tx.amount.toFixed(2), 150, y);
+            doc.text(tx.balance !== undefined ? tx.balance.toFixed(2) : '-', 180, y);
+            y += 8;
         });
+
+        const pdfBlob = doc.output('blob');
+        await downloadPDFBlob(pdfBlob, `${vendor.name}_ledger.pdf`);
         setIsMenuOpen(false);
     };
 

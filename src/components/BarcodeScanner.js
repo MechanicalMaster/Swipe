@@ -1,44 +1,167 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { FiX, FiZap, FiZapOff } from 'react-icons/fi';
+import { FiX, FiZap, FiZapOff, FiCamera, FiAlertCircle } from 'react-icons/fi';
 import styles from './BarcodeScanner.module.css';
+
+// Permission states
+const PERMISSION_STATE = {
+    CHECKING: 'checking',
+    GRANTED: 'granted',
+    DENIED: 'denied',
+    PROMPT: 'prompt',
+    UNSUPPORTED: 'unsupported',
+    INSECURE: 'insecure'
+};
 
 export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry }) {
     const scannerRef = useRef(null);
     const html5QrCodeRef = useRef(null);
     const [isFlashOn, setIsFlashOn] = useState(false);
     const [error, setError] = useState(null);
+    const [permissionState, setPermissionState] = useState(PERMISSION_STATE.CHECKING);
     const [manualBarcode, setManualBarcode] = useState('');
     const [showManualInput, setShowManualInput] = useState(false);
+
+    // Check if camera API is available
+    const checkCameraSupport = useCallback(async () => {
+        // Check HTTPS requirement (camera won't work on insecure origins except localhost)
+        const isSecure = window.location.protocol === 'https:' ||
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1';
+
+        if (!isSecure && !window.Capacitor?.isNative) {
+            setPermissionState(PERMISSION_STATE.INSECURE);
+            setError('Camera requires a secure connection (HTTPS). Please access this page via HTTPS.');
+            return false;
+        }
+
+        // Check if mediaDevices API is available
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            setPermissionState(PERMISSION_STATE.UNSUPPORTED);
+            setError('Camera is not supported on this browser. Please try a different browser or use manual entry.');
+            return false;
+        }
+
+        // Check camera permission status (if Permissions API is available)
+        try {
+            if (navigator.permissions && navigator.permissions.query) {
+                const result = await navigator.permissions.query({ name: 'camera' });
+
+                if (result.state === 'denied') {
+                    setPermissionState(PERMISSION_STATE.DENIED);
+                    setError('Camera permission was denied. Please enable camera access in your browser/device settings and try again.');
+                    return false;
+                } else if (result.state === 'granted') {
+                    setPermissionState(PERMISSION_STATE.GRANTED);
+                    return true;
+                } else {
+                    // 'prompt' - need to request permission
+                    setPermissionState(PERMISSION_STATE.PROMPT);
+                    return true;
+                }
+            } else {
+                // Permissions API not available, try requesting directly
+                setPermissionState(PERMISSION_STATE.PROMPT);
+                return true;
+            }
+        } catch (err) {
+            // Permissions API might not support 'camera' query, proceed anyway
+            console.log('Permission query not supported:', err);
+            setPermissionState(PERMISSION_STATE.PROMPT);
+            return true;
+        }
+    }, []);
+
+    // Request camera permission and start scanner
+    const requestCameraAndStart = useCallback(async () => {
+        try {
+            setError(null);
+            setPermissionState(PERMISSION_STATE.CHECKING);
+
+            // First validate a stream can be obtained (triggers permission prompt if needed)
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+
+            // Stop the test stream immediately
+            stream.getTracks().forEach(track => track.stop());
+
+            setPermissionState(PERMISSION_STATE.GRANTED);
+
+            // Now start the Html5Qrcode scanner
+            html5QrCodeRef.current = new Html5Qrcode('barcode-reader');
+
+            await html5QrCodeRef.current.start(
+                { facingMode: 'environment' },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                },
+                (decodedText) => {
+                    // Successfully scanned
+                    stopScanner();
+                    onScan(decodedText);
+                },
+                (errorMessage) => {
+                    // Ignore scan errors (no QR found in frame)
+                }
+            );
+        } catch (err) {
+            console.error('Camera/Scanner error:', err);
+
+            // Handle specific error types
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                setPermissionState(PERMISSION_STATE.DENIED);
+                setError('Camera permission denied. Please allow camera access in your browser settings to scan barcodes.');
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                setPermissionState(PERMISSION_STATE.UNSUPPORTED);
+                setError('No camera found on this device. Please use the manual entry option.');
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                setError('Camera is in use by another application. Please close other apps using the camera and try again.');
+            } else if (err.name === 'OverconstrainedError') {
+                // Try again without facingMode constraint
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    stream.getTracks().forEach(track => track.stop());
+
+                    html5QrCodeRef.current = new Html5Qrcode('barcode-reader');
+                    await html5QrCodeRef.current.start(
+                        { facingMode: 'user' },
+                        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+                        (decodedText) => { stopScanner(); onScan(decodedText); },
+                        () => { }
+                    );
+                    setPermissionState(PERMISSION_STATE.GRANTED);
+                    return;
+                } catch (fallbackErr) {
+                    setError('Could not access camera with required settings. Please try manual entry.');
+                }
+            } else {
+                setError(`Camera error: ${err.message || 'Unknown error'}. Please try again or use manual entry.`);
+            }
+        }
+    }, [onScan]);
 
     useEffect(() => {
         if (!isOpen) return;
 
         const startScanner = async () => {
-            try {
-                html5QrCodeRef.current = new Html5Qrcode('barcode-reader');
+            // Wait for DOM element to be available
+            await new Promise(resolve => requestAnimationFrame(resolve));
 
-                await html5QrCodeRef.current.start(
-                    { facingMode: 'environment' },
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0
-                    },
-                    (decodedText) => {
-                        // Successfully scanned
-                        stopScanner();
-                        onScan(decodedText);
-                    },
-                    (errorMessage) => {
-                        // Ignore scan errors (no QR found in frame)
-                    }
-                );
-            } catch (err) {
-                console.error('Scanner error:', err);
-                setError('Camera access denied. Please allow camera permission.');
+            // Double-check element exists
+            const element = document.getElementById('barcode-reader');
+            if (!element) {
+                console.warn('Barcode reader element not found, retrying...');
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            const canProceed = await checkCameraSupport();
+            if (canProceed) {
+                await requestCameraAndStart();
             }
         };
 
@@ -47,7 +170,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
         return () => {
             stopScanner();
         };
-    }, [isOpen]);
+    }, [isOpen, checkCameraSupport, requestCameraAndStart]);
 
     const stopScanner = async () => {
         if (html5QrCodeRef.current) {
@@ -68,6 +191,28 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
     const handleClose = () => {
         stopScanner();
         onClose();
+    };
+
+    const handleRetry = async () => {
+        // Clear error first - this triggers re-render to show the reader div
+        setError(null);
+        setPermissionState(PERMISSION_STATE.CHECKING);
+
+        // Wait for React to re-render and DOM to update
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        // Verify element exists now
+        const element = document.getElementById('barcode-reader');
+        if (!element) {
+            console.error('barcode-reader element still not found after retry');
+            setError('Scanner initialization failed. Please close and reopen the scanner.');
+            return;
+        }
+
+        const canProceed = await checkCameraSupport();
+        if (canProceed) {
+            await requestCameraAndStart();
+        }
     };
 
     const toggleFlash = async () => {
@@ -103,7 +248,22 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
             {/* Scanner Area */}
             <div className={styles.scannerContainer}>
                 {error ? (
-                    <div className={styles.errorMessage}>{error}</div>
+                    <div className={styles.errorContainer}>
+                        <FiAlertCircle size={48} color="#ef4444" />
+                        <div className={styles.errorMessage}>{error}</div>
+                        {permissionState !== PERMISSION_STATE.UNSUPPORTED &&
+                            permissionState !== PERMISSION_STATE.INSECURE && (
+                                <button className={styles.retryBtn} onClick={handleRetry}>
+                                    <FiCamera size={18} />
+                                    Try Again
+                                </button>
+                            )}
+                    </div>
+                ) : permissionState === PERMISSION_STATE.CHECKING ? (
+                    <div className={styles.loadingMessage}>
+                        <FiCamera size={48} color="#3b82f6" />
+                        <div>Requesting camera access...</div>
+                    </div>
                 ) : (
                     <>
                         <div id="barcode-reader" className={styles.reader} ref={scannerRef}></div>
@@ -119,7 +279,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
 
             {/* Instructions */}
             <div className={styles.instructions}>
-                Align the barcode within the frame
+                {error ? 'Use manual entry below or fix the issue above' : 'Align the barcode within the frame'}
             </div>
 
             {/* Manual Entry */}
@@ -148,3 +308,4 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
         </div>
     );
 }
+

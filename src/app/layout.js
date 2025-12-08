@@ -1,6 +1,7 @@
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import BackButtonHandler from "@/components/BackButtonHandler";
+import { ToastProvider } from "@/components/Toast";
 
 import AuthWrapper from '@/components/Auth/AuthWrapper';
 
@@ -15,13 +16,16 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthWrapper>
-          <BackButtonHandler />
-          <div className="main-content">
-            {children}
-          </div>
-          <BottomNav />
+          <ToastProvider>
+            <BackButtonHandler />
+            <div className="main-content">
+              {children}
+            </div>
+            <BottomNav />
+          </ToastProvider>
         </AuthWrapper>
       </body>
     </html>
   );
 }
+

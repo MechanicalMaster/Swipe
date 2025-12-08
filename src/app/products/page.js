@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
 import { useMasterStore } from '@/lib/store/masterStore';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
+import { shareText } from '@/lib/utils/invoiceActions';
 import { FiMenu, FiPlus, FiSearch, FiMoreHorizontal, FiDownload, FiUpload, FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { RiBarcodeLine } from 'react-icons/ri';
 import ProductCard from './components/ProductCard';
@@ -117,19 +118,11 @@ export default function ProductsPage() {
     };
 
     const handleShare = async (product) => {
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: product.name,
-                    text: `Check out this ${product.name}`,
-                    url: window.location.href // or specific product link
-                });
-            } catch (err) {
-                console.log('Share failed:', err);
-            }
-        } else {
-            alert("Sharing not supported on this device.");
-        }
+        await shareText({
+            title: product.name,
+            text: `Check out this ${product.name}`,
+            url: window.location.href
+        });
     };
 
     // --- Barcode Scan Handlers ---

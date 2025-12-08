@@ -1,10 +1,28 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiShare2, FiDollarSign } from 'react-icons/fi';
+import { shareInvoicePDF } from '@/lib/utils/invoiceActions';
 import styles from './BottomSheet.module.css'; // Reusing existing styles
 
 export const InvoiceBottomSheet = ({ isOpen, onClose, invoice, onRecordPayment, onShare }) => {
     if (!isOpen || !invoice) return null;
+
+    const handleShare = async () => {
+        // Use the passed onShare callback if provided (for backwards compatibility)
+        // Otherwise use the centralized shareInvoicePDF utility
+        if (onShare && typeof onShare === 'function') {
+            // Check if it's a placeholder (like the alert callback)
+            const result = onShare(invoice);
+            // If onShare returns void/undefined or the invoice, also try our utility
+            if (result === undefined) {
+                // It was likely a placeholder - use our utility instead
+                await shareInvoicePDF(invoice);
+            }
+        } else {
+            await shareInvoicePDF(invoice);
+        }
+        onClose();
+    };
 
     return createPortal(
         <div className={styles.overlay} onClick={onClose}>
@@ -15,7 +33,7 @@ export const InvoiceBottomSheet = ({ isOpen, onClose, invoice, onRecordPayment, 
                     <div>
                         <h3 style={{ margin: 0, fontSize: '18px' }}>Invoice #{invoice.invoiceNumber}</h3>
                         <div style={{ fontSize: '12px', color: '#666' }}>
-                            {new Date(invoice.date).toLocaleDateString()} • <span style={{ color: '#dc2626' }}>Pending</span>
+                            {new Date(invoice.date).toLocaleDateString()} • <span style={{ color: '#dc2626' }}>{invoice.status || 'Pending'}</span>
                         </div>
                     </div>
                     <FiX size={24} onClick={onClose} style={{ cursor: 'pointer' }} />
@@ -25,7 +43,7 @@ export const InvoiceBottomSheet = ({ isOpen, onClose, invoice, onRecordPayment, 
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
                         <div style={{ fontSize: '14px', color: '#666' }}>Amount Due</div>
                         <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#dc2626' }}>
-                            ₹ {invoice.total?.toFixed(2)}
+                            ₹ {(invoice.totals?.total || invoice.total || 0).toFixed(2)}
                         </div>
                     </div>
 
@@ -49,7 +67,7 @@ export const InvoiceBottomSheet = ({ isOpen, onClose, invoice, onRecordPayment, 
                             <FiDollarSign /> Record Payment
                         </button>
                         <button
-                            onClick={() => onShare(invoice)}
+                            onClick={handleShare}
                             style={{
                                 flex: 1,
                                 padding: '12px',
@@ -73,3 +91,4 @@ export const InvoiceBottomSheet = ({ isOpen, onClose, invoice, onRecordPayment, 
         document.body
     );
 };
+

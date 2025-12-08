@@ -1,17 +1,14 @@
 import styles from './ProductCard.module.css';
-import { FiShoppingBag } from 'react-icons/fi';
+import { FiShoppingBag, FiCheck } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export default function ProductCard({ product, onAddToTray, onShare }) {
+export default function ProductCard({ product, onAddToTray, onShare, quantity = 0, isSelectMode = false }) {
     const router = useRouter();
 
-    // Infer badges
-    // Removed "New" tag as requested. Retaining Bestseller if needed, or remove all if implied? 
-    // "Remove the 'New' tag" was specific. I'll keep Bestseller for now to be safe, or check complexity.
-    // Let's keep logic simple.
     const isBestseller = product.tags && product.tags.toLowerCase().includes('bestseller');
+    const isInTray = quantity > 0;
 
     // Format fields
     const purity = product.purity || '22K';
@@ -19,10 +16,11 @@ export default function ProductCard({ product, onAddToTray, onShare }) {
     const title = `${category} – ${purity}`;
     const weight = product.grossWeight ? `${Number(product.grossWeight).toFixed(2)}g` : '0.00g';
     const stone = product.stoneType || 'Plain Gold';
-    // Price removed as requested
 
     const handleCardClick = () => {
-        router.push(`/products/edit?id=${product.id}`);
+        if (!isSelectMode) {
+            router.push(`/products/edit?id=${product.id}`);
+        }
     };
 
     const handleAction = (e, callback) => {
@@ -31,13 +29,19 @@ export default function ProductCard({ product, onAddToTray, onShare }) {
     };
 
     return (
-        <div className={styles.card} onClick={handleCardClick} style={{ cursor: 'pointer' }}>
+        <div className={styles.card} onClick={handleCardClick} style={{ cursor: isSelectMode ? 'default' : 'pointer' }}>
             <div className={styles.imageContainer}>
                 {/* Badges */}
                 <div className={styles.purityBadge}>{purity}</div>
                 {isBestseller && (
                     <div className={`${styles.statusBadge} ${styles.bestseller}`}>
                         Bestseller
+                    </div>
+                )}
+                {/* Quantity Badge in Select Mode */}
+                {isSelectMode && isInTray && (
+                    <div className={styles.quantityBadge}>
+                        {quantity}
                     </div>
                 )}
 
@@ -54,24 +58,32 @@ export default function ProductCard({ product, onAddToTray, onShare }) {
             <div className={styles.details}>
                 <h3 className={styles.title}>{title}</h3>
                 <div className={styles.infoRow}>Weight: {weight} | Stone: {stone}</div>
-                {/* Price Removed */}
             </div>
 
             <div className={styles.actions}>
                 <button
-                    className={styles.primaryBtn}
+                    className={`${styles.primaryBtn} ${isInTray ? styles.addedBtn : ''}`}
                     onClick={(e) => handleAction(e, () => onAddToTray(product))}
                 >
-                    Add to Tray
+                    {isInTray ? (
+                        <>
+                            <FiCheck size={14} style={{ marginRight: 4 }} />
+                            Added ({quantity})
+                        </>
+                    ) : (
+                        'Add to Tray'
+                    )}
                 </button>
-                <button
-                    className={styles.iconBtn}
-                    onClick={(e) => handleAction(e, () => onShare(product))}
-                >
-                    <FaWhatsapp size={18} color="#25D366" />
-                </button>
-                {/* Edit and Duplicate buttons removed */}
+                {!isSelectMode && (
+                    <button
+                        className={styles.iconBtn}
+                        onClick={(e) => handleAction(e, () => onShare(product))}
+                    >
+                        <FaWhatsapp size={18} color="#25D366" />
+                    </button>
+                )}
             </div>
         </div>
     );
 }
+

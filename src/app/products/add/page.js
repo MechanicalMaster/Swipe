@@ -81,6 +81,14 @@ export default function AddProductPage() {
 
     const searchParams = useSearchParams();
     const returnUrl = searchParams.get('returnUrl');
+    const initialBarcode = searchParams.get('barcode');
+
+    // Prefill barcode from URL param (from scanner)
+    useEffect(() => {
+        if (initialBarcode) {
+            setFormData(prev => ({ ...prev, barcode: initialBarcode }));
+        }
+    }, [initialBarcode]);
 
     // Auto-generate SKU
     useEffect(() => {

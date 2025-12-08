@@ -1,28 +1,28 @@
 import Link from 'next/link';
 import {
-  RiFileList3Line, RiShoppingCartLine, RiClipboardLine,
-  RiArrowGoBackLine, RiArchiveLine, RiWallet3Line, RiCalculatorLine,
-  RiCarLine, RiFilePaper2Line, RiSecurePaymentLine, RiPieChartLine,
-  RiLineChartLine, RiMoneyDollarCircleLine, RiSettings3Line, RiRocketLine, RiCalendarCheckLine
-} from 'react-icons/ri';
+  InvoiceIcon, PurchaseIcon, QuotationIcon, DailyLoginIcon,
+  LendingBillIcon, ExpensesIcon, ProFormaInvoiceIcon,
+  PaymentsTimelineIcon, ReportsIcon, InsightsIcon,
+  InvoiceTemplatesIcon, DocumentSettingsIcon
+} from '@/components/icons';
 import styles from './page.module.css';
 
 const createItems = [
-  { name: 'Invoice', icon: RiFileList3Line, href: '/invoice/create' },
-  { name: 'Purchase', icon: RiShoppingCartLine, href: '/bills/purchase/create' },
-  { name: 'Quotation', icon: RiClipboardLine, href: '/coming-soon' },
-  { name: 'Daily Login', icon: RiCalendarCheckLine, href: '/attendance' },
-  { name: 'Lending Bill', icon: RiArchiveLine, href: '/invoice/create?type=lending' },
-  { name: 'Expenses', icon: RiWallet3Line, href: '/more/bills/expenses/create' },
-  { name: 'Pro Forma Invoice', icon: RiCalculatorLine, href: '/invoice/create?type=proforma' },
+  { name: 'Invoice', icon: InvoiceIcon, href: '/invoice/create' },
+  { name: 'Purchase', icon: PurchaseIcon, href: '/bills/purchase/create' },
+  { name: 'Quotation', icon: QuotationIcon, href: '/coming-soon' },
+  { name: 'Daily Login', icon: DailyLoginIcon, href: '/attendance' },
+  { name: 'Lending Bill', icon: LendingBillIcon, href: '/invoice/create?type=lending' },
+  { name: 'Expenses', icon: ExpensesIcon, href: '/more/bills/expenses/create' },
+  { name: 'Pro Forma Invoice', icon: ProFormaInvoiceIcon, href: '/invoice/create?type=proforma' },
 ];
 
 const quickAccessItems = [
-  { name: 'Payments Timeline', icon: RiSecurePaymentLine, href: '/coming-soon' },
-  { name: 'Reports', icon: RiPieChartLine, href: '/reports' },
-  { name: 'Insights', icon: RiLineChartLine, href: '/coming-soon' },
-  { name: 'Invoice Templates', icon: RiFileList3Line, href: '/coming-soon' },
-  { name: 'Document Settings', icon: RiSettings3Line, href: '/coming-soon' },
+  { name: 'Payments Timeline', icon: PaymentsTimelineIcon, href: '/coming-soon' },
+  { name: 'Reports', icon: ReportsIcon, href: '/reports' },
+  { name: 'Insights', icon: InsightsIcon, href: '/coming-soon' },
+  { name: 'Invoice Templates', icon: InvoiceTemplatesIcon, href: '/coming-soon' },
+  { name: 'Document Settings', icon: DocumentSettingsIcon, href: '/coming-soon' },
 ];
 
 export default function Home() {
@@ -42,7 +42,7 @@ export default function Home() {
           {createItems.map((item) => (
             <Link key={item.name} href={item.href} className={styles.gridItem}>
               <div className={styles.iconBox}>
-                <item.icon strokeWidth={0} /> {/* React Icons usually don't take strokeWidth prop directly unless SVG, but we rely on CSS color */}
+                <item.icon size={32} />
               </div>
               <span className={styles.label}>{item.name}</span>
             </Link>
@@ -58,7 +58,7 @@ export default function Home() {
           {quickAccessItems.map((item) => (
             <Link key={item.name} href={item.href} className={styles.gridItem}>
               <div className={styles.iconBox}>
-                <item.icon />
+                <item.icon size={32} />
               </div>
               <span className={styles.label}>{item.name}</span>
             </Link>
@@ -70,3 +70,4 @@ export default function Home() {
     </div>
   );
 }
+

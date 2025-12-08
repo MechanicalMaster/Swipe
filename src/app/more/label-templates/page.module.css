@@ -1,0 +1,174 @@
+.container {
+    min-height: 100vh;
+    background: #f8fafc;
+    padding-bottom: 80px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.toggleContainer {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+    background: white;
+}
+
+.toggleBtn {
+    flex: 1;
+    padding: 10px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toggleBtn.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card.selected {
+    border-color: #2563eb;
+}
+
+.checkBadge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background: #2563eb;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.previewContainer {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow: hidden;
+}
+
+.previewImage {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.previewPlaceholder {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.barcodePlaceholder {
+    width: 80%;
+    height: 32px;
+    background: linear-gradient(90deg, #333 2px, transparent 2px) 0 0 / 4px 100%;
+}
+
+.textPlaceholder {
+    width: 60%;
+    height: 8px;
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+.weightBig {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 8px;
+}
+
+.cardContent {
+    padding: 12px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.templateName {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.templateDesc {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.note {
+    text-align: center;
+    padding: 24px;
+    color: #9ca3af;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.savingIndicator {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111827;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+}

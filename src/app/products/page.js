@@ -2,14 +2,18 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
 import { useMasterStore } from '@/lib/store/masterStore';
-import { FiMenu, FiPlus, FiSearch, FiMoreHorizontal, FiDownload, FiUpload } from 'react-icons/fi';
+import { useInvoiceStore } from '@/lib/store/invoiceStore';
+import { FiMenu, FiPlus, FiSearch, FiMoreHorizontal, FiDownload, FiUpload, FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { RiBarcodeLine } from 'react-icons/ri';
 import ProductCard from './components/ProductCard';
 import FilterBar from './components/FilterBar';
 import Pagination from './components/Pagination';
 import BottomSheet from '@/components/BottomSheet';
+import BarcodeScanner from '@/components/BarcodeScanner';
+import ScanResultModal from '@/components/ScanResultModal';
 import { BulkUploadService } from '@/lib/services/bulkUploadService';
 import styles from './page.module.css';
 
@@ -17,11 +21,21 @@ const ITEMS_PER_PAGE = 12;
 
 export default function ProductsPage() {
     const router = useRouter();
-    const { products, loadProducts, addProduct } = useProductStore();
+    const searchParams = useSearchParams();
+    const { products, loadProducts, addProduct, getProductByBarcode } = useProductStore();
     const { categories, loadCategories } = useMasterStore();
+    const { items: invoiceItems, addOrUpdateItem } = useInvoiceStore();
+
+    // Detect selection mode from query params
+    const isSelectMode = searchParams.get('mode') === 'select';
+    const returnUrl = searchParams.get('returnUrl') || '/invoice/create';
 
     const [search, setSearch] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    // Barcode Scanner State
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [scanResult, setScanResult] = useState({ isOpen: false, product: null, barcode: '' });
 
     // Filter State
     const [filters, setFilters] = useState({
@@ -47,7 +61,6 @@ export default function ProductsPage() {
 
             // 2. Purity
             if (filters.purity.length > 0) {
-                // Approximate match (e.g. "22K" in "22K")
                 const productPurity = product.purity || '';
                 if (!filters.purity.some(f => productPurity.includes(f))) return false;
             }
@@ -63,14 +76,10 @@ export default function ProductsPage() {
                 if (!matchesWeight) return false;
             }
 
-            // 4. Gender (Inferred from Category or Name)
+            // 4. Gender
             if (filters.gender.length > 0) {
                 const genderText = (product.category + ' ' + product.name + ' ' + (product.tags || '')).toLowerCase();
                 const matchesGender = filters.gender.some(g => genderText.includes(g.toLowerCase()));
-
-                // If distinct gender field existed, we'd use it. For now, we infer.
-                // If inference fails, we might hide it, but rigorous filtering might hide too much.
-                // strict inference:
                 if (!matchesGender) return false;
             }
 
@@ -90,10 +99,21 @@ export default function ProductsPage() {
         currentPage * ITEMS_PER_PAGE
     );
 
+    // --- Get quantity in invoice for a product ---
+    const getItemQuantity = (productId) => {
+        const item = invoiceItems.find(i => i.productId === productId);
+        return item ? item.quantity : 0;
+    };
+
     // --- Handlers ---
     const handleAddToTray = (product) => {
-        console.log("Added to tray:", product.name);
-        // TODO: Implement Tray Logic
+        if (isSelectMode) {
+            // Add to invoice store
+            addOrUpdateItem(product, 1);
+        } else {
+            console.log("Added to tray:", product.name);
+            // TODO: Implement standalone Tray Logic if needed
+        }
     };
 
     const handleShare = async (product) => {
@@ -112,23 +132,75 @@ export default function ProductsPage() {
         }
     };
 
+    // --- Barcode Scan Handlers ---
+    const handleBarcodeScan = async (barcode) => {
+        setIsScannerOpen(false);
+        const product = await getProductByBarcode(barcode);
+        setScanResult({ isOpen: true, product, barcode });
+    };
+
+    const handleScanAddToTray = (product) => {
+        if (isSelectMode) {
+            addOrUpdateItem(product, 1);
+        }
+        setScanResult({ isOpen: false, product: null, barcode: '' });
+    };
+
+    const handleScanAgain = () => {
+        setScanResult({ isOpen: false, product: null, barcode: '' });
+        setIsScannerOpen(true);
+    };
+
+    const handleAddManually = (barcode) => {
+        setScanResult({ isOpen: false, product: null, barcode: '' });
+        router.push(`/products/add?barcode=${encodeURIComponent(barcode)}&returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+    };
+
     return (
         <div className={styles.container}>
-            {/* Header */}
+            {/* Header - Context Aware */}
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
-                    <Link href="/">
-                        <FiMenu size={24} className={styles.menuIcon} />
-                    </Link>
-                    <span className={styles.headerTitle}>Products & Services</span>
+                    {isSelectMode ? (
+                        <FiArrowLeft size={24} className={styles.menuIcon} onClick={() => router.push(returnUrl)} />
+                    ) : (
+                        <Link href="/">
+                            <FiMenu size={24} className={styles.menuIcon} />
+                        </Link>
+                    )}
+                    <span className={styles.headerTitle}>
+                        {isSelectMode ? 'Select Products' : 'Products & Services'}
+                    </span>
                 </div>
                 <div className={styles.headerActions}>
-                    <FiSearch size={24} />
-                    <FiMoreHorizontal size={24} onClick={() => setIsMenuOpen(true)} />
+                    <RiBarcodeLine size={24} onClick={() => setIsScannerOpen(true)} style={{ cursor: 'pointer' }} />
+                    {isSelectMode ? (
+                        <button
+                            onClick={() => router.push(returnUrl)}
+                            style={{
+                                background: '#2563eb',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                fontWeight: 600,
+                                fontSize: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <FiCheck size={16} />
+                            Done ({invoiceItems.length})
+                        </button>
+                    ) : (
+                        <FiMoreHorizontal size={24} onClick={() => setIsMenuOpen(true)} />
+                    )}
                 </div>
             </div>
 
-            {/* Search Bar - Matches uploaded_image_2 */}
+            {/* Search Bar */}
             <div className={styles.searchContainer}>
                 <div className={styles.searchBar}>
                     <FiSearch color="#9ca3af" size={20} />
@@ -147,7 +219,7 @@ export default function ProductsPage() {
                     filters={filters}
                     onFilterChange={(newFilters) => {
                         setFilters(newFilters);
-                        setCurrentPage(1); // Reset page on filter change
+                        setCurrentPage(1);
                     }}
                     categories={categories}
                 />
@@ -161,6 +233,8 @@ export default function ProductsPage() {
                         product={product}
                         onAddToTray={handleAddToTray}
                         onShare={handleShare}
+                        quantity={isSelectMode ? getItemQuantity(product.id) : 0}
+                        isSelectMode={isSelectMode}
                     />
                 ))}
             </div>
@@ -182,28 +256,52 @@ export default function ProductsPage() {
                 />
             )}
 
-            {/* Floating Create Button */}
-            <Link href="/products/add">
-                <div className={styles.fab}>
-                    <FiPlus size={18} />
-                    NEW PRODUCT
-                </div>
-            </Link>
-
-            <BottomSheet isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
-                <div style={{ display: 'flex', flexDirection: 'column', padding: '0 16px 20px' }}>
-                    <div className={styles.menuItem} onClick={() => { BulkUploadService.downloadAllProducts(); setIsMenuOpen(false); }}>
-                        <FiDownload size={20} />
-                        <span>Bulk Download</span>
+            {/* Floating Create Button - Hidden in Select Mode */}
+            {!isSelectMode && (
+                <Link href="/products/add">
+                    <div className={styles.fab}>
+                        <FiPlus size={18} />
+                        NEW PRODUCT
                     </div>
-                    <Link href="/products/bulk-upload" onClick={() => setIsMenuOpen(false)}>
-                        <div className={styles.menuItem}>
-                            <FiUpload size={20} />
-                            <span>Bulk Upload</span>
+                </Link>
+            )}
+
+
+            {/* Bulk Actions Menu - Hidden in Select Mode */}
+            {!isSelectMode && (
+                <BottomSheet isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', padding: '0 16px 20px' }}>
+                        <div className={styles.menuItem} onClick={() => { BulkUploadService.downloadAllProducts(); setIsMenuOpen(false); }}>
+                            <FiDownload size={20} />
+                            <span>Bulk Download</span>
                         </div>
-                    </Link>
-                </div>
-            </BottomSheet>
+                        <Link href="/products/bulk-upload" onClick={() => setIsMenuOpen(false)}>
+                            <div className={styles.menuItem}>
+                                <FiUpload size={20} />
+                                <span>Bulk Upload</span>
+                            </div>
+                        </Link>
+                    </div>
+                </BottomSheet>
+            )}
+
+            {/* Barcode Scanner */}
+            <BarcodeScanner
+                isOpen={isScannerOpen}
+                onScan={handleBarcodeScan}
+                onClose={() => setIsScannerOpen(false)}
+            />
+
+            {/* Scan Result Modal */}
+            <ScanResultModal
+                isOpen={scanResult.isOpen}
+                product={scanResult.product}
+                barcode={scanResult.barcode}
+                onAddToTray={handleScanAddToTray}
+                onScanAgain={handleScanAgain}
+                onAddManually={handleAddManually}
+                onClose={() => setScanResult({ isOpen: false, product: null, barcode: '' })}
+            />
         </div>
     );
 }

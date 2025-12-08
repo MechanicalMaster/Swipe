@@ -16,6 +16,16 @@ export const useProductStore = create((set, get) => ({
         }
     },
 
+    getProductByBarcode: async (barcode) => {
+        try {
+            const products = await db.products.where('barcode').equals(barcode).toArray();
+            return products.length > 0 ? products[0] : null;
+        } catch (error) {
+            console.error('Failed to lookup product by barcode:', error);
+            return null;
+        }
+    },
+
     generateSKU: async (category, subCategory) => {
         if (!category || !subCategory) return '';
         try {

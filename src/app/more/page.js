@@ -34,6 +34,7 @@ const menuItems = [
             { label: 'General Settings', icon: FiSettings, href: '/coming-soon' },
             { label: 'Invoice Templates', icon: FiFileText, href: '/more/templates' },
             { label: 'Lending Bill Template', icon: FiFileText, href: '/more/templates/lending' },
+            { label: 'Label Templates', icon: FiFileText, href: '/more/label-templates' },
             { label: 'Bank', icon: FiCreditCard, href: '/coming-soon' },
             { label: 'Signature', icon: FiEdit3, href: '/coming-soon' },
             { label: 'Notes & Terms', icon: FiBookOpen, href: '/coming-soon' },

@@ -142,7 +142,7 @@ export const shareInvoicePDF = async (invoice) => {
             await Share.share({
                 title: `Invoice ${invoice.invoiceNumber}`,
                 text: `Please find attached invoice ${invoice.invoiceNumber}`,
-                url: result.uri,
+                files: [result.uri],
                 dialogTitle: 'Send Invoice'
             });
 

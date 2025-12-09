@@ -90,6 +90,20 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
 
             setPermissionState(PERMISSION_STATE.GRANTED);
 
+            // Wait for the DOM element to be rendered
+            let attempts = 0;
+            let element = null;
+            while (attempts < 50) { // Try for up to 2.5s
+                element = document.getElementById('barcode-reader');
+                if (element) break;
+                await new Promise(resolve => setTimeout(resolve, 50));
+                attempts++;
+            }
+
+            if (!element) {
+                throw new Error("Scanner element could not be initialized (DOM element not found)");
+            }
+
             // Now start the Html5Qrcode scanner
             html5QrCodeRef.current = new Html5Qrcode('barcode-reader');
 
@@ -152,13 +166,6 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
             // Wait for DOM element to be available
             await new Promise(resolve => requestAnimationFrame(resolve));
 
-            // Double-check element exists
-            const element = document.getElementById('barcode-reader');
-            if (!element) {
-                console.warn('Barcode reader element not found, retrying...');
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-
             const canProceed = await checkCameraSupport();
             if (canProceed) {
                 await requestCameraAndStart();
@@ -198,16 +205,8 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
         setError(null);
         setPermissionState(PERMISSION_STATE.CHECKING);
 
-        // Wait for React to re-render and DOM to update
-        await new Promise(resolve => setTimeout(resolve, 150));
-
-        // Verify element exists now
-        const element = document.getElementById('barcode-reader');
-        if (!element) {
-            console.error('barcode-reader element still not found after retry');
-            setError('Scanner initialization failed. Please close and reopen the scanner.');
-            return;
-        }
+        // Wait for React to re-render
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const canProceed = await checkCameraSupport();
         if (canProceed) {

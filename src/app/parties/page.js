@@ -99,19 +99,21 @@ export default function PartiesPage() {
                 <button
                     style={{
                         position: 'fixed',
-                        bottom: 80,
+                        bottom: 90,
                         right: 16,
-                        background: '#2563eb',
+                        background: 'linear-gradient(90deg, #FBBF24 0%, #F59E0B 100%)',
                         color: 'white',
-                        padding: '12px 24px',
-                        borderRadius: '24px',
+                        padding: '14px 20px',
+                        borderRadius: '50px',
                         border: 'none',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
-                        fontWeight: 'bold',
+                        boxShadow: '0 10px 25px -5px rgba(245, 194, 66, 0.5)',
+                        fontWeight: 700,
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        zIndex: 20
+                        zIndex: 40,
+                        fontSize: '14px',
+                        textTransform: 'uppercase'
                     }}
                 >
                     <FiPlus size={20} /> {activeTab === 'customers' ? 'NEW CUSTOMER' : 'NEW VENDOR'}

@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils/tax';
 import { shareInvoicePDF, downloadInvoicePDF } from '@/lib/utils/invoiceActions';
 import BottomSheet from '@/components/BottomSheet';
 import {
-    FiArrowLeft, FiEdit, FiMoreHorizontal, FiShare2, FiPrinter, FiDownload, FiPlus,
+    FiArrowLeft, FiEdit, FiMoreHorizontal, FiShare2, FiPrinter, FiDownload,
     FiCopy, FiClock, FiRefreshCw, FiSettings, FiMail, FiMessageSquare,
     FiTruck, FiFileText, FiXCircle
 } from 'react-icons/fi';
@@ -158,17 +158,17 @@ function InvoiceViewContent() {
 
                 {/* Items */}
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#374151' }}>
-                    Items <span style={{ color: '#6b7280', fontWeight: 400 }}>({invoice.items.length} Product)</span>
+                    Items <span style={{ color: '#6b7280', fontWeight: 400 }}>({invoice.items?.length || 0} Product)</span>
                 </div>
                 <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-                    {invoice.items.map((item, idx) => (
+                    {invoice.items?.map((item, idx) => (
                         <div key={idx} style={{ padding: 16, borderBottom: '1px solid #f3f4f6' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <div style={{ fontWeight: 600 }}>{item.name}</div>
-                                <div style={{ fontWeight: 600 }}>{formatCurrency(item.rate)}</div>
+                                <div style={{ fontWeight: 600 }}>{item.description || item.name || 'Unnamed Item'}</div>
+                                <div style={{ fontWeight: 600 }}>{formatCurrency(item.rate || 0)}</div>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6b7280' }}>
-                                <div>x {item.quantity}</div>
+                                <div>x {item.quantity || 1}</div>
                                 <div>&gt;</div>
                             </div>
                         </div>
@@ -176,12 +176,12 @@ function InvoiceViewContent() {
                     <div style={{ padding: 16, background: '#f9fafb' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 14, color: '#6b7280' }}>
                             <div>Subtotal</div>
-                            <div>{formatCurrency(invoice.totals.subtotal)}</div>
+                            <div>{formatCurrency(invoice.totals?.subtotal || 0)}</div>
                         </div>
                         {/* Add other charges here if present */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 14 }}>
                             <div>Total Amount</div>
-                            <div>{formatCurrency(invoice.totals.total)}</div>
+                            <div>{formatCurrency(invoice.totals?.grandTotal || invoice.totals?.total || 0)}</div>
                         </div>
                     </div>
                 </div>
@@ -215,35 +215,6 @@ function InvoiceViewContent() {
                     )}
                 </div>
 
-                {/* Internal Notes */}
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#374151' }}>Internal Notes</div>
-                <div style={{ background: 'white', padding: 16, borderRadius: 12, marginBottom: 16 }}>
-                    <button style={{
-                        border: 'none', background: 'none', color: '#2563eb', fontWeight: 600,
-                        display: 'flex', alignItems: 'center', gap: 6
-                    }}>
-                        <FiPlus size={16} /> Add Internal Notes
-                    </button>
-                </div>
-
-                {/* Attachments */}
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: '#374151' }}>Attachments</div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <button style={{
-                        flex: 1, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8,
-                        padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        color: '#2563eb', fontWeight: 600
-                    }}>
-                        📷 Camera
-                    </button>
-                    <button style={{
-                        flex: 1, background: 'white', border: '1px solid #e5e7eb', borderRadius: 8,
-                        padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        color: '#2563eb', fontWeight: 600
-                    }}>
-                        ⬆️ Upload File
-                    </button>
-                </div>
             </div>
 
             {/* Bottom Actions */}

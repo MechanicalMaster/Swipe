@@ -259,17 +259,41 @@ export const api = {
         create: (data) => api.post('/products', data),
         update: (id, data) => api.put(`/products/${id}`, data),
         delete: (id) => api.delete(`/products/${id}`),
-        uploadImage: async (id, file) => {
-            const formData = new FormData();
-            formData.append('image', file);
-            const token = getToken();
-            const response = await fetch(`${API_BASE}/products/${id}/images`, {
-                method: 'POST',
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                body: formData,
-            });
-            if (!response.ok) throw new ApiError('Failed to upload image', response.status);
-            return response.json();
+
+        // Image operations - managed separately from product CRUD
+        images: {
+            /**
+             * Upload an image to a product
+             * @param {string} productId - Product ID
+             * @param {File} file - Image file to upload
+             * @returns {Promise<{id: string, url: string, createdAt: string}>}
+             */
+            upload: async (productId, file) => {
+                const formData = new FormData();
+                formData.append('image', file); // Field name MUST be 'image' per API spec
+                const token = getToken();
+                const response = await fetch(`${API_BASE}/products/${productId}/images`, {
+                    method: 'POST',
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                    body: formData,
+                });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new ApiError(
+                        errorData.error || 'Failed to upload image',
+                        response.status,
+                        errorData.details
+                    );
+                }
+                return response.json();
+            },
+
+            /**
+             * Delete an image from a product
+             * @param {string} productId - Product ID
+             * @param {string} imageId - Image ID to delete
+             */
+            delete: (productId, imageId) => api.delete(`/products/${productId}/images/${imageId}`),
         },
     },
 
@@ -323,6 +347,30 @@ export const api = {
     // Photos
     photos: {
         getUrl: (id) => `${API_BASE}/photos/${id}`,
+        /**
+         * Convert a relative API URL to an absolute URL
+         * Handles URLs like "/api/photos/..." returned from the backend
+         * @param {string} relativeUrl - Relative URL from API response
+         * @returns {string} Full URL with backend host
+         */
+        getFullUrl: (relativeUrl) => {
+            if (!relativeUrl) return '';
+            // If already absolute, return as-is
+            if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
+                return relativeUrl;
+            }
+            // Get the base URL without /api suffix
+            const baseHost = API_BASE ? API_BASE.replace('/api', '') : '';
+            // Handle relative URLs that start with /api
+            if (relativeUrl.startsWith('/api/')) {
+                return `${baseHost}${relativeUrl}`;
+            }
+            // Handle relative URLs that start with /
+            if (relativeUrl.startsWith('/')) {
+                return `${baseHost}${relativeUrl}`;
+            }
+            return relativeUrl;
+        },
     },
 
     // Expenses (if endpoint exists)

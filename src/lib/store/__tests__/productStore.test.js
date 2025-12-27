@@ -84,7 +84,8 @@ describe('productStore', () => {
             const result = await addProduct(newProduct);
 
             expect(api.products.create).toHaveBeenCalledWith(newProduct);
-            expect(result).toEqual(savedProduct);
+            // addProduct returns the product ID for use in subsequent operations (e.g., image uploads)
+            expect(result).toEqual(savedProduct.id);
 
             const state = useProductStore.getState();
             expect(state.products[0]).toEqual(savedProduct);

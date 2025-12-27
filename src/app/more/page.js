@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSettingsStore } from '@/lib/store/settingsStore';
-import { FiUser, FiSettings, FiChevronRight, FiBriefcase, FiUsers, FiFileText, FiCreditCard, FiEdit3, FiBookOpen, FiBox } from 'react-icons/fi';
+import { FiUser, FiSettings, FiChevronRight, FiBriefcase, FiUsers, FiFileText, FiCreditCard, FiEdit3, FiBookOpen, FiBox, FiTerminal } from 'react-icons/fi';
+import { DIAGNOSTICS_ENABLED } from '@/lib/utils/isDiagnosticsEnabled';
 import styles from './page.module.css';
 
-const menuItems = [
+const baseMenuItems = [
     {
         title: 'Profile',
         items: [
@@ -48,6 +49,27 @@ export default function MorePage() {
 
     useEffect(() => {
         loadSettings();
+    }, []);
+
+    // Conditionally add Diagnostics menu item when enabled
+    const menuItems = useMemo(() => {
+        if (!DIAGNOSTICS_ENABLED) {
+            return baseMenuItems;
+        }
+
+        // Add Diagnostics to Settings section
+        return baseMenuItems.map(section => {
+            if (section.title === 'Settings') {
+                return {
+                    ...section,
+                    items: [
+                        ...section.items,
+                        { label: 'Diagnostics', icon: FiTerminal, href: '/more/diagnostics' },
+                    ]
+                };
+            }
+            return section;
+        });
     }, []);
 
     return (

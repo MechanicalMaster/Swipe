@@ -6,8 +6,20 @@ import { useSettingsStore } from '@/lib/store/settingsStore';
 export const Template2 = ({ data }) => {
     const {
         invoiceNumber, date, dueDate, placeOfSupply, invoiceCopyType,
-        items, totals, customer, details, payment
+        items = [], customer, details = {}, payment
     } = data;
+
+    // Ensure totals object has all required fields with safe defaults
+    const totals = {
+        subtotal: 0,
+        cgst: 0,
+        sgst: 0,
+        igst: 0,
+        total: 0,
+        roundOffAmount: 0,
+        ...data.totals
+    };
+
     const companyDetails = data.companyDetails || useSettingsStore.getState().companyDetails;
 
     // Helper to format address without trailing commas
@@ -172,10 +184,10 @@ export const Template2 = ({ data }) => {
                             </>
                         ))}
 
-                        {totals.roundOffAmount !== 0 && (
+                        {totals.roundOffAmount != null && totals.roundOffAmount !== 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
                                 <span>Round Off</span>
-                                <span>{totals.roundOffAmount.toFixed(2)}</span>
+                                <span>{Number(totals.roundOffAmount).toFixed(2)}</span>
                             </div>
                         )}
 

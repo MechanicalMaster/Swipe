@@ -23,7 +23,12 @@ export const generatePDF = async (data) => {
     // Since we have no images yet, it's fine.
 
     try {
-        const canvas = await html2canvas(div.querySelector('#invoice-template'), {
+        const templateElement = div.querySelector('#invoice-template');
+        if (!templateElement) {
+            throw new Error('Invoice template failed to render. Check that all required invoice data (totals, items, customer) is present.');
+        }
+
+        const canvas = await html2canvas(templateElement, {
             scale: 2, // Higher quality
             logging: false,
             useCORS: true

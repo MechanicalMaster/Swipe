@@ -1,0 +1,392 @@
+.container {
+    padding: 16px;
+    padding-bottom: 80px;
+    background: var(--background);
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.backButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--foreground);
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--foreground);
+}
+
+.filterBar {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filterRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.filterRow:last-child {
+    margin-bottom: 0;
+}
+
+.levelChip {
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.levelChip.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.levelChip.debug {
+    border-color: #9CA3AF;
+}
+
+.levelChip.debug.active {
+    background: #9CA3AF;
+    border-color: #9CA3AF;
+}
+
+.levelChip.info {
+    border-color: #3B82F6;
+}
+
+.levelChip.info.active {
+    background: #3B82F6;
+    border-color: #3B82F6;
+}
+
+.levelChip.warn {
+    border-color: #F59E0B;
+}
+
+.levelChip.warn.active {
+    background: #F59E0B;
+    border-color: #F59E0B;
+}
+
+.levelChip.error {
+    border-color: #EF4444;
+}
+
+.levelChip.error.active {
+    background: #EF4444;
+    border-color: #EF4444;
+}
+
+.levelChip.audit {
+    border-color: #8B5CF6;
+}
+
+.levelChip.audit.active {
+    background: #8B5CF6;
+    border-color: #8B5CF6;
+}
+
+.searchInput {
+    flex: 1;
+    min-width: 150px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 14px;
+}
+
+.searchInput::placeholder {
+    color: var(--text-muted);
+}
+
+.dateInput {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 12px;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.exportButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--foreground);
+    transition: all 0.2s;
+}
+
+.exportButton:hover {
+    background: var(--primary-light);
+}
+
+.exportButton.primary {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.stats {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.logList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.logCard {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.logCard:active {
+    background: #F9FAFB;
+}
+
+.logHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.levelBadge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.levelBadge.debug {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+
+.levelBadge.info {
+    background: #DBEAFE;
+    color: #1D4ED8;
+}
+
+.levelBadge.warn {
+    background: #FEF3C7;
+    color: #D97706;
+}
+
+.levelBadge.error {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.levelBadge.audit {
+    background: #EDE9FE;
+    color: #7C3AED;
+}
+
+.timestamp {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.eventName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.sessionInfo {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.contextWrapper {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.contextToggle {
+    font-size: 12px;
+    color: var(--primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.contextJson {
+    margin-top: 8px;
+    padding: 12px;
+    background: var(--background);
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.loadMore {
+    padding: 12px;
+    text-align: center;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--card-bg);
+    border-radius: 12px;
+    margin-top: 8px;
+}
+
+.empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.error {
+    background: #FEE2E2;
+    color: #DC2626;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+/* Confirmation Dialog */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+}
+
+.dialog {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+}
+
+.dialogTitle {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--foreground);
+    margin-bottom: 12px;
+}
+
+.dialogText {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.dialogActions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.dialogButton {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+}
+
+.dialogButton.secondary {
+    background: var(--background);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+}
+
+.dialogButton.danger {
+    background: #EF4444;
+    color: white;
+}
+
+.checkboxRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.checkboxRow input {
+    width: 18px;
+    height: 18px;
+}
+
+.checkboxRow label {
+    font-size: 14px;
+    color: var(--foreground);
+}

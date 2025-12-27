@@ -1,6 +1,6 @@
 
 import { LogEntry, LogLevel } from '../types';
-import { LogStorage } from './index';
+import { LogStorage, LogQueryOptions, LogQueryResult } from './index';
 import { STORAGE_CONFIG } from '../config';
 
 const DB_VERSION = 1;
@@ -111,6 +111,87 @@ export class IndexedDbStorage implements LogStorage {
         // Quick approximation: assuming roughly 500 bytes per log
         // Better implementation would be to track size in metadata
         return 0;
+    }
+
+    async query(options: LogQueryOptions): Promise<LogQueryResult> {
+        if (!this.isReady || !this.db) {
+            return { entries: [], total: 0, hasMore: false };
+        }
+
+        const { levels, event, startTime, endTime, sessionId, correlationId, limit = 50, offset = 0 } = options;
+
+        // Read from both stores and merge
+        const allEntries: LogEntry[] = [];
+
+        const readStore = (storeName: string): Promise<LogEntry[]> => {
+            return new Promise((resolve, reject) => {
+                const transaction = this.db!.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const entries: LogEntry[] = [];
+
+                // Use cursor with 'prev' direction for reverse-chronological order
+                const cursorRequest = store.openCursor(null, 'prev');
+
+                cursorRequest.onsuccess = (e) => {
+                    const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
+                    if (cursor) {
+                        const entry = cursor.value as LogEntry;
+
+                        // Apply filters
+                        let include = true;
+
+                        if (levels && levels.length > 0 && !levels.includes(entry.level)) {
+                            include = false;
+                        }
+                        if (event && !entry.event.toLowerCase().includes(event.toLowerCase())) {
+                            include = false;
+                        }
+                        if (startTime && entry.timestamp < startTime) {
+                            include = false;
+                        }
+                        if (endTime && entry.timestamp > endTime) {
+                            include = false;
+                        }
+                        if (sessionId && entry.sessionId !== sessionId) {
+                            include = false;
+                        }
+                        if (correlationId && (entry.context as Record<string, unknown>)?.correlationId !== correlationId) {
+                            include = false;
+                        }
+
+                        if (include) {
+                            entries.push(entry);
+                        }
+
+                        cursor.continue();
+                    } else {
+                        resolve(entries);
+                    }
+                };
+
+                cursorRequest.onerror = () => reject(cursorRequest.error);
+            });
+        };
+
+        try {
+            const [logs, audits] = await Promise.all([
+                readStore(STORAGE_CONFIG.STORE_LOGS),
+                readStore(STORAGE_CONFIG.STORE_AUDIT)
+            ]);
+
+            // Merge and sort by timestamp (descending)
+            allEntries.push(...logs, ...audits);
+            allEntries.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+            const total = allEntries.length;
+            const paginatedEntries = allEntries.slice(offset, offset + limit);
+            const hasMore = offset + limit < total;
+
+            return { entries: paginatedEntries, total, hasMore };
+        } catch (error) {
+            console.error('Query failed:', error);
+            return { entries: [], total: 0, hasMore: false };
+        }
     }
 
     // FIFO Eviction

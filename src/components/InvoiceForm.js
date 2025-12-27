@@ -326,12 +326,6 @@ export default function InvoiceForm() {
                         />
                     </div>
                 ))}
-                <div className={styles.optionalRow} style={{ borderBottom: 'none' }}>
-                    <div className={styles.optionalLabel}>
-                        <span style={{ width: 24, textAlign: 'center' }}>📎</span>
-                        Attachments
-                    </div>
-                </div>
             </div>
 
 

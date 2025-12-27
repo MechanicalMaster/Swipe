@@ -79,22 +79,47 @@ export const useInvoiceStore = create((set, get) => ({
     })),
 
     // Load invoice into form for editing
-    setInvoice: (invoice) => set({
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        date: invoice.date,
-        dueDate: invoice.dueDate || invoice.date,
-        placeOfSupply: invoice.placeOfSupply || '',
-        invoiceCopyType: invoice.invoiceCopyType || 'Original for Recipient',
-        customer: invoice.customer,
-        items: invoice.items,
-        details: invoice.details || { reference: '', notes: '', terms: '', extraDiscount: 0, shippingCharges: 0, packagingCharges: 0 },
-        weightSummary: invoice.weightSummary || { grossWeight: '', netWeight: '' },
-        toggles: invoice.toggles || { tds: false, tcs: false, rcm: false },
-        payment: invoice.payment || { isFullyPaid: false, amountReceived: 0, mode: 'Cash', notes: '' },
-        roundOff: invoice.totals?.roundOffAmount !== 0,
-        type: invoice.type || 'INVOICE'
-    }),
+    setInvoice: (invoice) => {
+        // Transform API items to form-compatible format
+        const transformedItems = (invoice.items || []).map(item => {
+            const netWeight = Number(item.weight?.net || item.netWeight) || 0;
+            const makingCharges = Number(item.amount?.makingCharges) || 0;
+            // Derive makingChargePerGram from total makingCharges
+            const makingChargePerGram = netWeight > 0 ? makingCharges / netWeight : 0;
+
+            return {
+                id: item.id || Date.now(),
+                productId: item.productId,
+                name: item.description || item.name || '',
+                rate: item.rate || 0,
+                quantity: item.quantity || 1,
+                gstRate: item.taxRate || 3,
+                hsn: item.hsn || '',
+                grossWeight: Number(item.weight?.gross || item.grossWeight) || 0,
+                netWeight: netWeight,
+                ratePerGram: item.rate || 0,
+                makingChargePerGram: makingChargePerGram,
+                purity: item.purity || ''
+            };
+        });
+
+        set({
+            id: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            date: invoice.date?.split('T')[0] || invoice.date,
+            dueDate: (invoice.dueDate || invoice.date)?.split('T')[0] || invoice.dueDate || invoice.date,
+            placeOfSupply: invoice.placeOfSupply || '',
+            invoiceCopyType: invoice.invoiceCopyType || 'Original for Recipient',
+            customer: invoice.customer,
+            items: transformedItems,
+            details: invoice.details || { reference: '', notes: '', terms: '', extraDiscount: 0, shippingCharges: 0, packagingCharges: 0 },
+            weightSummary: invoice.weightSummary || { grossWeight: '', netWeight: '' },
+            toggles: invoice.toggles || { tds: false, tcs: false, rcm: false },
+            payment: invoice.payment || { isFullyPaid: false, amountReceived: 0, mode: 'Cash', notes: '' },
+            roundOff: invoice.totals?.roundOff !== 0,
+            type: invoice.type || 'INVOICE'
+        });
+    },
 
     updateDetails: (field, value) => set((state) => ({
         details: { ...state.details, [field]: value }

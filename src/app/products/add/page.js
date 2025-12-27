@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
+import { FiX, FiLoader } from 'react-icons/fi';
 import { useMasterStore } from '@/lib/store/masterStore';
 import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp, FiLock, FiUnlock, FiRefreshCw } from 'react-icons/fi';
 import styles from '../page.module.css';
 
 export default function AddProductPage() {
     const router = useRouter();
-    const { addProduct, generateSKU } = useProductStore();
+    const { addProduct, generateSKU, uploadProductImage } = useProductStore();
     const { categories, loadCategories, subCategories, loadSubCategories } = useMasterStore();
 
     const [skuLocked, setSkuLocked] = useState(true);
@@ -74,10 +75,14 @@ export default function AddProductPage() {
         // Optional
         launchDate: '',
 
-        images: [],
         showOnline: true,
         notForSale: false
     });
+
+    // Pending images to upload after product creation (File objects with preview URLs)
+    const [pendingImages, setPendingImages] = useState([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
     const searchParams = useSearchParams();
     const returnUrl = searchParams.get('returnUrl');
@@ -119,11 +124,12 @@ export default function AddProductPage() {
             }
         }
 
+        // Product payload - NO images (managed separately per API spec)
         const payload = {
             type: formData.type,
             name: formData.name,
-            sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : 0,
-            purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : 0,
+            sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : null,
+            purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : null,
             taxRate: formData.taxRate,
             unit: formData.unit,
             category: formData.category,
@@ -137,7 +143,7 @@ export default function AddProductPage() {
             launchDate: formData.launchDate || null,
             showOnline: formData.showOnline,
             notForSale: formData.notForSale,
-            images: formData.images,
+            // images: NOT included - managed via separate API calls
 
             // Nested Objects
             metal: {
@@ -174,26 +180,78 @@ export default function AddProductPage() {
             }
         };
 
-        await addProduct(payload);
-        if (returnUrl) {
-            router.push(returnUrl);
-        } else {
-            router.push('/products');
+        try {
+            // Step 1: Create the product first
+            const productId = await addProduct(payload);
+
+            // Step 2: Upload pending images (if any) AFTER product exists
+            if (pendingImages.length > 0 && productId) {
+                setIsUploading(true);
+                setUploadProgress({ current: 0, total: pendingImages.length });
+
+                // Upload with concurrency limit (2 at a time to avoid mobile radio saturation)
+                const uploadQueue = [...pendingImages];
+                const concurrencyLimit = 2;
+                const failedUploads = [];
+
+                const uploadNext = async () => {
+                    while (uploadQueue.length > 0) {
+                        const img = uploadQueue.shift();
+                        try {
+                            await uploadProductImage(productId, img.file);
+                        } catch (error) {
+                            console.error('Image upload failed:', error);
+                            failedUploads.push(img.file.name);
+                        }
+                        setUploadProgress(prev => ({ ...prev, current: prev.current + 1 }));
+                    }
+                };
+
+                // Start concurrent uploads
+                await Promise.all(
+                    Array(Math.min(concurrencyLimit, pendingImages.length))
+                        .fill(null)
+                        .map(() => uploadNext())
+                );
+
+                setIsUploading(false);
+
+                if (failedUploads.length > 0) {
+                    alert(`Product saved, but ${failedUploads.length} image(s) failed to upload: ${failedUploads.join(', ')}`);
+                }
+            }
+
+            // Cleanup preview URLs
+            pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
+
+            if (returnUrl) {
+                router.push(returnUrl);
+            } else {
+                router.push('/products');
+            }
+        } catch (error) {
+            console.error('Failed to save product:', error);
+            alert('Failed to save product: ' + error.message);
         }
     };
 
-    const handleImageUpload = (e) => {
+    const handleImageSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({
-                    ...prev,
-                    images: [...prev.images, { name: file.name, data: reader.result }]
-                }));
-            };
-            reader.readAsDataURL(file);
+            // Store file object with preview URL (not base64)
+            const previewUrl = URL.createObjectURL(file);
+            setPendingImages(prev => [...prev, { file, previewUrl, name: file.name }]);
         }
+        // Reset input to allow selecting same file again
+        e.target.value = '';
+    };
+
+    const handleRemovePendingImage = (index) => {
+        setPendingImages(prev => {
+            const removed = prev[index];
+            URL.revokeObjectURL(removed.previewUrl);
+            return prev.filter((_, i) => i !== index);
+        });
     };
 
     return (
@@ -582,6 +640,11 @@ export default function AddProductPage() {
             <div className={styles.card}>
                 <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>
                     Product images must be PNG or JPEG, recommended 1024 px by 1024 px or 1:1 aspect ratio.
+                    {pendingImages.length > 0 && (
+                        <span style={{ color: '#3b82f6', marginLeft: 8 }}>
+                            ({pendingImages.length} image{pendingImages.length > 1 ? 's' : ''} ready to upload)
+                        </span>
+                    )}
                 </div>
                 <div style={{ display: 'flex', gap: 12, overflowX: 'auto' }}>
                     <label style={{
@@ -589,12 +652,26 @@ export default function AddProductPage() {
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         cursor: 'pointer', flexShrink: 0
                     }}>
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
                         <FiImage size={24} color="#3b82f6" />
                         <span style={{ fontSize: 10, fontWeight: 600, marginTop: 4 }}>New<br />Image</span>
                     </label>
-                    {formData.images.map((img, idx) => (
-                        <img key={idx} src={img.data} alt="" style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                    {pendingImages.map((img, idx) => (
+                        <div key={idx} style={{ position: 'relative', flexShrink: 0 }}>
+                            <img src={img.previewUrl} alt="" style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover' }} />
+                            <button
+                                onClick={() => handleRemovePendingImage(idx)}
+                                style={{
+                                    position: 'absolute', top: -6, right: -6,
+                                    width: 20, height: 20, borderRadius: '50%',
+                                    background: '#ef4444', border: 'none', color: 'white',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', fontSize: 12
+                                }}
+                            >
+                                <FiX size={12} />
+                            </button>
+                        </div>
                     ))}
                 </div>
             </div>
@@ -622,7 +699,21 @@ export default function AddProductPage() {
             </div>
 
             <div className={styles.footer}>
-                <button className={styles.saveButton} onClick={handleSave}>Add Product</button>
+                <button
+                    className={styles.saveButton}
+                    onClick={handleSave}
+                    disabled={isUploading}
+                    style={isUploading ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
+                >
+                    {isUploading ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <FiLoader style={{ animation: 'spin 1s linear infinite' }} />
+                            Uploading {uploadProgress.current}/{uploadProgress.total}...
+                        </span>
+                    ) : (
+                        'Add Product'
+                    )}
+                </button>
             </div>
         </div >
     );

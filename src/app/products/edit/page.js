@@ -5,14 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
 import { useMasterStore } from '@/lib/store/masterStore';
 import { api } from '@/api/backendClient';
-import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp, FiLock, FiUnlock } from 'react-icons/fi';
+import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp, FiLock, FiUnlock, FiX, FiLoader, FiTrash2 } from 'react-icons/fi';
 import styles from '../page.module.css'; // Reuse styles
 
 export default function EditProductPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
-    const { updateProduct } = useProductStore();
+    const { updateProduct, uploadProductImage, deleteProductImage } = useProductStore();
     const { categories, loadCategories, subCategories, loadSubCategories } = useMasterStore();
     const [loading, setLoading] = useState(true);
     const [skuLocked, setSkuLocked] = useState(true);
@@ -75,10 +75,18 @@ export default function EditProductPage() {
         launchDate: '',
         tags: '',
 
-        images: [],
         showOnline: true,
         notForSale: false
     });
+
+    // Existing images from the server (with id and url)
+    const [existingImages, setExistingImages] = useState([]);
+    // Pending new images to upload (File objects with preview URLs)
+    const [pendingImages, setPendingImages] = useState([]);
+    // Images being deleted (for UI feedback)
+    const [deletingImages, setDeletingImages] = useState(new Set());
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
     useEffect(() => {
         loadCategories();
@@ -91,38 +99,63 @@ export default function EditProductPage() {
             try {
                 const product = await api.products.get(id);
                 if (product) {
+                    // Store existing images separately (use url from API response)
+                    setExistingImages(product.images || []);
+
+                    // Map product fields with null-safe defaults to prevent controlled component warnings
                     setFormData(prev => ({
                         ...prev,
-                        ...product,
+                        type: product.type || 'product',
+                        name: product.name || '',
+                        sellingPrice: product.sellingPrice ?? '',
+                        purchasePrice: product.purchasePrice ?? '',
+                        taxRate: product.taxRate ?? 3,
+                        unit: product.unit || 'gms',
+                        hsn: product.hsn || '',
+                        category: product.category || '',
+                        subCategory: product.subCategory || '',
+                        sku: product.sku || '',
+                        description: product.description || '',
+                        vendorRef: product.vendorRef || '',
+                        procurementDate: product.procurementDate || new Date().toISOString().split('T')[0],
+                        hallmarkCert: product.hallmarkCert || '',
+                        barcode: product.barcode || '',
+                        launchDate: product.launchDate || '',
+                        occasion: product.occasion || '',
+                        collection: product.collection || '',
+                        tags: product.tags || '',
+                        showOnline: product.showOnline ?? true,
+                        notForSale: product.notForSale ?? false,
+
                         // Flatten Metal Attributes
                         metalType: product.metal?.type || 'Gold',
                         metalColor: product.metal?.color || 'Yellow',
                         purity: product.metal?.purity || '22K',
-                        grossWeight: product.metal?.grossWeight || '',
-                        netWeight: product.metal?.netWeight || '',
-                        wastagePercentage: product.metal?.wastagePercentage || '',
-                        wastageWeight: product.metal?.wastageWeight || '',
-                        makingCharges: product.metal?.makingCharges || '',
+                        grossWeight: product.metal?.grossWeight ?? '',
+                        netWeight: product.metal?.netWeight ?? '',
+                        wastagePercentage: product.metal?.wastagePercentage ?? '',
+                        wastageWeight: product.metal?.wastageWeight ?? '',
+                        makingCharges: product.metal?.makingCharges ?? '',
                         makingChargesType: product.metal?.makingChargesType || 'per_gram',
                         metalRateRef: product.metal?.rateRef || '',
 
                         // Flatten Gemstone Attributes
                         hasStones: !!product.gemstone,
                         stoneType: product.gemstone?.type || '',
-                        stoneCount: product.gemstone?.count || '',
-                        stoneWeight: product.gemstone?.weight || '',
+                        stoneCount: product.gemstone?.count ?? '',
+                        stoneWeight: product.gemstone?.weight ?? '',
                         stoneShape: product.gemstone?.shape || '',
                         stoneClarity: product.gemstone?.clarity || '',
                         stoneColor: product.gemstone?.color || '',
                         stoneCut: product.gemstone?.cut || '',
                         stoneCertification: product.gemstone?.certification || '',
-                        stonePrice: product.gemstone?.price || '',
+                        stonePrice: product.gemstone?.price ?? '',
                         stoneSetting: product.gemstone?.setting || '',
 
                         // Flatten Design Attributes
                         size: product.design?.size || '',
                         pattern: product.design?.pattern || '',
-                        customizable: product.design?.customizable || false,
+                        customizable: product.design?.customizable ?? false,
                         engravingText: product.design?.engravingText || ''
                     }));
                 }
@@ -152,14 +185,15 @@ export default function EditProductPage() {
             }
         }
 
+        // Product payload - NO images (managed separately per API spec)
         const payload = {
             type: formData.type,
             name: formData.name,
-            sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : 0,
-            purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : 0,
+            sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : null,
+            purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : null,
             taxRate: formData.taxRate,
             unit: formData.unit,
-            hsn: formData.hsn, // Edit page has HSN
+            hsn: formData.hsn,
             category: formData.category,
             subCategory: formData.subCategory,
             sku: formData.sku,
@@ -171,10 +205,10 @@ export default function EditProductPage() {
             launchDate: formData.launchDate || null,
             showOnline: formData.showOnline,
             notForSale: formData.notForSale,
-            images: formData.images,
             occasion: formData.occasion,
             collection: formData.collection,
             tags: formData.tags,
+            // images: NOT included - managed via separate API calls
 
             // Nested Objects
             metal: {
@@ -211,21 +245,92 @@ export default function EditProductPage() {
             }
         };
 
-        await updateProduct(id, payload);
-        router.back();
+        try {
+            // Step 1: Update the product (images not affected)
+            await updateProduct(id, payload);
+
+            // Step 2: Upload pending new images (if any)
+            if (pendingImages.length > 0) {
+                setIsUploading(true);
+                setUploadProgress({ current: 0, total: pendingImages.length });
+
+                const uploadQueue = [...pendingImages];
+                const concurrencyLimit = 2;
+                const failedUploads = [];
+
+                const uploadNext = async () => {
+                    while (uploadQueue.length > 0) {
+                        const img = uploadQueue.shift();
+                        try {
+                            const result = await uploadProductImage(id, img.file);
+                            // Add to existing images for display
+                            setExistingImages(prev => [...prev, result]);
+                        } catch (error) {
+                            console.error('Image upload failed:', error);
+                            failedUploads.push(img.file.name);
+                        }
+                        setUploadProgress(prev => ({ ...prev, current: prev.current + 1 }));
+                    }
+                };
+
+                await Promise.all(
+                    Array(Math.min(concurrencyLimit, pendingImages.length))
+                        .fill(null)
+                        .map(() => uploadNext())
+                );
+
+                setIsUploading(false);
+                setPendingImages([]);
+
+                if (failedUploads.length > 0) {
+                    alert(`Product updated, but ${failedUploads.length} image(s) failed to upload: ${failedUploads.join(', ')}`);
+                }
+            }
+
+            // Cleanup preview URLs
+            pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
+
+            router.back();
+        } catch (error) {
+            console.error('Failed to update product:', error);
+            alert('Failed to update product: ' + error.message);
+        }
     };
 
-    const handleImageUpload = (e) => {
+    const handleImageSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({
-                    ...prev,
-                    images: [...prev.images, { name: file.name, data: reader.result }]
-                }));
-            };
-            reader.readAsDataURL(file);
+            const previewUrl = URL.createObjectURL(file);
+            setPendingImages(prev => [...prev, { file, previewUrl, name: file.name }]);
+        }
+        e.target.value = '';
+    };
+
+    const handleRemovePendingImage = (index) => {
+        setPendingImages(prev => {
+            const removed = prev[index];
+            URL.revokeObjectURL(removed.previewUrl);
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    const handleDeleteExistingImage = async (imageId) => {
+        if (deletingImages.has(imageId)) return;
+
+        setDeletingImages(prev => new Set(prev).add(imageId));
+
+        try {
+            await deleteProductImage(id, imageId);
+            setExistingImages(prev => prev.filter(img => img.id !== imageId));
+        } catch (error) {
+            console.error('Failed to delete image:', error);
+            alert('Failed to delete image: ' + error.message);
+        } finally {
+            setDeletingImages(prev => {
+                const next = new Set(prev);
+                next.delete(imageId);
+                return next;
+            });
         }
     };
 
@@ -626,19 +731,77 @@ export default function EditProductPage() {
             <div className={styles.card}>
                 <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>
                     Product images must be PNG or JPEG, recommended 1024 px by 1024 px or 1:1 aspect ratio.
+                    {(existingImages.length > 0 || pendingImages.length > 0) && (
+                        <span style={{ color: '#3b82f6', marginLeft: 8 }}>
+                            ({existingImages.length} saved{pendingImages.length > 0 ? `, ${pendingImages.length} pending` : ''})
+                        </span>
+                    )}
                 </div>
                 <div style={{ display: 'flex', gap: 12, overflowX: 'auto' }}>
+                    {/* Add new image button */}
                     <label style={{
                         width: 80, height: 80, border: '1px dashed #e5e7eb', borderRadius: 8,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         cursor: 'pointer', flexShrink: 0
                     }}>
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
                         <FiImage size={24} color="#3b82f6" />
                         <span style={{ fontSize: 10, fontWeight: 600, marginTop: 4 }}>New<br />Image</span>
                     </label>
-                    {formData.images.map((img, idx) => (
-                        <img key={idx} src={img.data} alt="" style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+
+                    {/* Existing images from server */}
+                    {existingImages.map((img) => (
+                        <div key={img.id} style={{ position: 'relative', flexShrink: 0 }}>
+                            <img
+                                src={api.photos.getFullUrl(img.url)}
+                                alt=""
+                                style={{
+                                    width: 80, height: 80, borderRadius: 8, objectFit: 'cover',
+                                    opacity: deletingImages.has(img.id) ? 0.5 : 1
+                                }}
+                            />
+                            <button
+                                onClick={() => handleDeleteExistingImage(img.id)}
+                                disabled={deletingImages.has(img.id)}
+                                style={{
+                                    position: 'absolute', top: -6, right: -6,
+                                    width: 20, height: 20, borderRadius: '50%',
+                                    background: '#ef4444', border: 'none', color: 'white',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: deletingImages.has(img.id) ? 'not-allowed' : 'pointer', fontSize: 12
+                                }}
+                            >
+                                {deletingImages.has(img.id) ? <FiLoader size={10} /> : <FiTrash2 size={10} />}
+                            </button>
+                        </div>
+                    ))}
+
+                    {/* Pending new images (not yet uploaded) */}
+                    {pendingImages.map((img, idx) => (
+                        <div key={`pending-${idx}`} style={{ position: 'relative', flexShrink: 0 }}>
+                            <img
+                                src={img.previewUrl}
+                                alt=""
+                                style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: '2px dashed #3b82f6' }}
+                            />
+                            <button
+                                onClick={() => handleRemovePendingImage(idx)}
+                                style={{
+                                    position: 'absolute', top: -6, right: -6,
+                                    width: 20, height: 20, borderRadius: '50%',
+                                    background: '#f97316', border: 'none', color: 'white',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', fontSize: 12
+                                }}
+                            >
+                                <FiX size={12} />
+                            </button>
+                            <span style={{
+                                position: 'absolute', bottom: 4, left: 4, right: 4,
+                                fontSize: 8, color: '#3b82f6', textAlign: 'center',
+                                background: 'rgba(255,255,255,0.9)', borderRadius: 2, padding: '1px 2px'
+                            }}>Pending</span>
+                        </div>
                     ))}
                 </div>
             </div>
@@ -684,7 +847,21 @@ export default function EditProductPage() {
             </div>
 
             <div className={styles.footer}>
-                <button className={styles.saveButton} onClick={handleSave}>Update Product</button>
+                <button
+                    className={styles.saveButton}
+                    onClick={handleSave}
+                    disabled={isUploading}
+                    style={isUploading ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
+                >
+                    {isUploading ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <FiLoader style={{ animation: 'spin 1s linear infinite' }} />
+                            Uploading {uploadProgress.current}/{uploadProgress.total}...
+                        </span>
+                    ) : (
+                        'Update Product'
+                    )}
+                </button>
             </div>
         </div >
     );

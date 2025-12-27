@@ -86,19 +86,100 @@ export const useProductStore = create((set, get) => ({
         }
     },
 
+    /**
+     * Upload an image to a product (optimistic update with rollback)
+     * @param {string} productId - Product ID (must exist)
+     * @param {File} file - Image file to upload
+     * @returns {Promise<{id: string, url: string}>} The uploaded image info
+     */
     uploadProductImage: async (productId, file) => {
+        // Create optimistic image entry with temp ID
+        const tempId = `temp_${Date.now()}`;
+        const tempUrl = URL.createObjectURL(file);
+        const optimisticImage = { id: tempId, url: tempUrl, uploading: true };
+
+        // Optimistically add to state
+        set((state) => ({
+            products: state.products.map(p =>
+                p.id === productId
+                    ? { ...p, images: [...(p.images || []), optimisticImage] }
+                    : p
+            )
+        }));
+
         try {
-            const result = await api.products.uploadImage(productId, file);
-            // Refresh the product to get updated images array
-            const updatedProduct = await api.products.get(productId);
+            const result = await api.products.images.upload(productId, file);
+
+            // Replace temp image with real one
             set((state) => ({
                 products: state.products.map(p =>
-                    p.id === productId ? updatedProduct : p
+                    p.id === productId
+                        ? {
+                            ...p,
+                            images: (p.images || []).map(img =>
+                                img.id === tempId
+                                    ? { id: result.id, url: result.url, createdAt: result.createdAt }
+                                    : img
+                            )
+                        }
+                        : p
                 )
             }));
+
+            // Cleanup blob URL
+            URL.revokeObjectURL(tempUrl);
             return result;
         } catch (error) {
+            // Rollback: remove the temp image
+            set((state) => ({
+                products: state.products.map(p =>
+                    p.id === productId
+                        ? { ...p, images: (p.images || []).filter(img => img.id !== tempId) }
+                        : p
+                )
+            }));
+            URL.revokeObjectURL(tempUrl);
             logger.error(LOG_EVENTS.STORE_SAVE_ERROR, { store: 'product_image', productId, error: error.message });
+            throw error;
+        }
+    },
+
+    /**
+     * Delete an image from a product (optimistic update with rollback)
+     * @param {string} productId - Product ID
+     * @param {string} imageId - Image ID to delete
+     */
+    deleteProductImage: async (productId, imageId) => {
+        // Store the image for potential rollback
+        const state = get();
+        const product = state.products.find(p => p.id === productId);
+        const imageToDelete = product?.images?.find(img => img.id === imageId);
+
+        if (!imageToDelete) {
+            throw new Error('Image not found');
+        }
+
+        // Optimistically remove from state
+        set((state) => ({
+            products: state.products.map(p =>
+                p.id === productId
+                    ? { ...p, images: (p.images || []).filter(img => img.id !== imageId) }
+                    : p
+            )
+        }));
+
+        try {
+            await api.products.images.delete(productId, imageId);
+        } catch (error) {
+            // Rollback: restore the image
+            set((state) => ({
+                products: state.products.map(p =>
+                    p.id === productId
+                        ? { ...p, images: [...(p.images || []), imageToDelete] }
+                        : p
+                )
+            }));
+            logger.error(LOG_EVENTS.STORE_DELETE_ERROR, { store: 'product_image', productId, imageId, error: error.message });
             throw error;
         }
     },

@@ -3,6 +3,7 @@ import { FiShoppingBag, FiCheck } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { api } from '@/api/backendClient';
 
 export default function ProductCard({ product, onAddToTray, onShare, quantity = 0, isSelectMode = false }) {
     const router = useRouter();
@@ -47,7 +48,11 @@ export default function ProductCard({ product, onAddToTray, onShare, quantity = 
 
                 {/* Image */}
                 {product.images && product.images.length > 0 ? (
-                    <img src={product.images[0].data} alt={product.name} className={styles.image} />
+                    <img
+                        src={api.photos.getFullUrl(product.images[0].url) || product.images[0].data}
+                        alt={product.name}
+                        className={styles.image}
+                    />
                 ) : (
                     <div className={styles.placeholderImage}>
                         <FiShoppingBag size={32} color="#ccc" />

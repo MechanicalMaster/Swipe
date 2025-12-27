@@ -156,9 +156,9 @@ function MasterModal({ isOpen, onClose, mode, item, categories, actions }) {
             // Subcategory
             if (!categoryId) return alert('Category is required for Sub-Category');
             if (item) {
-                await actions.updateSubCategory(item.id, { name, categoryId: Number(categoryId) });
+                await actions.updateSubCategory(item.id, { name, categoryId });
             } else {
-                await actions.addSubCategory(name, Number(categoryId));
+                await actions.addSubCategory(name, categoryId);
             }
         }
         onClose();

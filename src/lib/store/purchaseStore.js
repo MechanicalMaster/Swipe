@@ -1,13 +1,15 @@
 import { create } from 'zustand';
-import { db } from '@/lib/db';
+import { api } from '@/api/backendClient';
 
 export const usePurchaseStore = create((set, get) => ({
-    purchaseNumber: 'PUR-1',
+    purchaseNumber: '', // Assigned by backend
     date: new Date().toISOString().split('T')[0],
     dueDate: new Date().toISOString().split('T')[0],
     vendor: null,
     items: [],
     purchases: [], // List of all purchases
+    isLoading: false,
+    error: null,
 
     // GST Toggle
     gstEnabled: true,
@@ -59,13 +61,29 @@ export const usePurchaseStore = create((set, get) => ({
         payment: { ...state.payment, [field]: value }
     })),
 
-    // Load purchases from DB
+    // Load purchases from backend
     loadPurchases: async () => {
-        const purchases = await db.purchases.toArray();
-        set({ purchases: purchases.reverse() });
+        set({ isLoading: true, error: null });
+        try {
+            const purchases = await api.purchases.list();
+            set({ purchases: purchases.reverse(), isLoading: false });
+        } catch (error) {
+            logger.error(LOG_EVENTS.STORE_LOAD_ERROR, { store: 'purchases', error: error.message });
+            set({ error: error.message, isLoading: false });
+        }
     },
 
-    // Item management
+    // Get single purchase
+    getPurchase: async (id) => {
+        try {
+            return await api.purchases.get(id);
+        } catch (error) {
+            logger.error(LOG_EVENTS.STORE_LOAD_ERROR, { store: 'purchase_get', id, error: error.message });
+            throw error;
+        }
+    },
+
+    // Item management (local state)
     addItem: () => set((state) => ({
         items: [...state.items, {
             id: Date.now(),
@@ -100,172 +118,124 @@ export const usePurchaseStore = create((set, get) => ({
         return state;
     }),
 
-    // Calculate totals
+    // Calculate totals for UI preview - backend is authoritative
     calculateTotals: () => {
         const { items, details, roundOff, gstEnabled } = get();
         let subtotal = 0;
 
-        // Calculate line item totals
         items.forEach(item => {
-            // Effective Weight = Net Weight + Wastage
             const netWeight = Number(item.netWeight) || 0;
             const wastage = Number(item.wastage) || 0;
             const effectiveWeight = netWeight + wastage;
-
-            // Amount = Effective Weight × Rate per gram
             const ratePerGram = Number(item.ratePerGram) || 0;
             const itemTotal = effectiveWeight * ratePerGram * (item.quantity || 1);
-
             subtotal += itemTotal;
         });
 
-        // Tax Calculation (when GST is enabled)
-        let cgstAmount = 0;
-        let sgstAmount = 0;
-        let totalTax = 0;
-
+        let cgstAmount = 0, sgstAmount = 0, totalTax = 0;
         if (gstEnabled) {
-            const cgstRate = 1.5;
-            const sgstRate = 1.5;
-
-            cgstAmount = (subtotal * cgstRate) / 100;
-            sgstAmount = (subtotal * sgstRate) / 100;
+            cgstAmount = (subtotal * 1.5) / 100;
+            sgstAmount = (subtotal * 1.5) / 100;
             totalTax = cgstAmount + sgstAmount;
         }
 
         let total = subtotal + totalTax;
-
-        // Add/Subtract extra charges
         total += Number(details.shippingCharges || 0);
         total += Number(details.packagingCharges || 0);
         total -= Number(details.extraDiscount || 0);
 
         let finalTotal = total;
         let roundOffAmount = 0;
-
         if (roundOff) {
             finalTotal = Math.round(total);
             roundOffAmount = finalTotal - total;
         }
 
         return {
-            subtotal,
-            totalTax,
-            total: finalTotal,
-            roundOffAmount,
-            rawTotal: total,
-            cgst: cgstAmount,
-            sgst: sgstAmount,
-            igst: 0
+            subtotal, totalTax, total: finalTotal, roundOffAmount,
+            rawTotal: total, cgst: cgstAmount, sgst: sgstAmount, igst: 0
         };
     },
 
-    // Save purchase to database
+    // Save purchase to backend
     savePurchase: async () => {
         const state = get();
-        const { purchaseNumber, date, dueDate, vendor, items, details, weightSummary, payment, id, gstEnabled } = state;
+        const { date, dueDate, vendor, items, details, weightSummary, payment, id, gstEnabled } = state;
 
         if (!vendor) throw new Error('Vendor is required');
         if (items.length === 0) throw new Error('At least one item is required');
 
-        // Calculate totals
-        const totals = state.calculateTotals();
+        set({ isLoading: true, error: null });
 
-        const balanceDue = totals.total - (payment.amountPaid || 0);
-        const status = balanceDue <= 0 ? 'Paid' : (payment.amountPaid > 0 ? 'Partial' : 'Unpaid');
-
-        // Prepare items with computed values
-        const persistedItems = items.map(item => {
-            const netWeight = Number(item.netWeight) || 0;
-            const wastage = Number(item.wastage) || 0;
-            const effectiveWeight = netWeight + wastage;
-            const ratePerGram = Number(item.ratePerGram) || 0;
-            const itemTotal = effectiveWeight * ratePerGram * (item.quantity || 1);
-
-            return {
-                ...item,
-                effectiveWeight,
-                itemTotal
-            };
-        });
+        // Prepare items for backend
+        const preparedItems = items.map(item => ({
+            name: item.name,
+            netWeight: Number(item.netWeight) || 0,
+            grossWeight: Number(item.grossWeight) || 0,
+            wastage: Number(item.wastage) || 0,
+            ratePerGram: Number(item.ratePerGram) || 0,
+            quantity: item.quantity || 1,
+            purity: item.purity || '',
+            hsn: item.hsn || ''
+        }));
 
         const purchaseData = {
-            purchaseNumber,
+            vendorId: vendor.id,
             date,
             dueDate,
-            vendorId: vendor.id,
-            vendor: { name: vendor.name, id: vendor.id, phone: vendor.phone },
-            items: persistedItems,
+            vendor: {
+                name: vendor.name,
+                phone: vendor.phone,
+                gstin: vendor.gstin
+            },
+            items: preparedItems,
             details,
             weightSummary,
             gstEnabled,
-            totals,
-            status,
-            balanceDue,
-
-            // Tax columns for easy querying
-            cgstAmount: totals.cgst,
-            sgstAmount: totals.sgst,
-            totalBeforeTax: totals.subtotal,
-            totalAfterTax: totals.total,
-
-            updatedAt: new Date().toISOString()
+            roundOff: state.roundOff,
+            payment: {
+                amountPaid: Number(payment.amountPaid) || 0,
+                mode: payment.mode,
+                notes: payment.notes
+            }
         };
 
-        return await db.transaction('rw', db.purchases, db.payments, db.vendors, async () => {
-            let purchaseId = id;
-
+        try {
+            let savedPurchase;
             if (id) {
-                await db.purchases.update(id, purchaseData);
+                savedPurchase = await api.purchases.update(id, purchaseData);
             } else {
-                purchaseId = await db.purchases.add({ ...purchaseData, createdAt: new Date().toISOString() });
+                savedPurchase = await api.purchases.create(purchaseData);
             }
 
-            // Update vendor balance (purchase increases what you owe the vendor)
-            if (!id) {
-                const currentVendor = await db.vendors.get(vendor.id);
-                if (currentVendor) {
-                    // Purchase increases balance (you owe more to vendor)
-                    // Payment decreases it
-                    const newBalance = (currentVendor.balance || 0) + totals.total - Number(payment.amountPaid || 0);
-                    await db.vendors.update(vendor.id, { balance: newBalance });
-                }
+            // Reload purchases from backend
+            const purchases = await api.purchases.list();
+            set({ purchases: purchases.reverse(), isLoading: false });
 
-                // Record payment if any
-                if (payment.amountPaid > 0) {
-                    await db.payments.add({
-                        transactionNumber: 'VPAYOUT-' + Date.now().toString().slice(-4),
-                        date: date,
-                        type: 'OUT',
-                        partyType: 'VENDOR',
-                        partyId: vendor.id,
-                        amount: Number(payment.amountPaid),
-                        mode: payment.mode,
-                        notes: payment.notes,
-                        createdAt: new Date().toISOString()
-                    });
-                }
-            }
-
-            // Reload purchases
-            const purchases = await db.purchases.toArray();
-            set({ purchases: purchases.reverse() });
-
-            return purchaseId;
-        });
+            return savedPurchase.id;
+        } catch (error) {
+            logger.error(LOG_EVENTS.STORE_SAVE_ERROR, { store: 'purchase', error: error.message });
+            set({ error: error.message, isLoading: false });
+            throw error;
+        }
     },
 
-    // Delete purchase
     deletePurchase: async (id) => {
-        await db.purchases.delete(id);
-        const purchases = await db.purchases.toArray();
-        set({ purchases: purchases.reverse() });
+        set({ isLoading: true, error: null });
+        try {
+            await api.purchases.delete(id);
+            const purchases = await api.purchases.list();
+            set({ purchases: purchases.reverse(), isLoading: false });
+        } catch (error) {
+            logger.error(LOG_EVENTS.STORE_DELETE_ERROR, { store: 'purchase', id, error: error.message });
+            set({ error: error.message, isLoading: false });
+            throw error;
+        }
     },
 
-    // Reset store
     resetPurchase: () => set({
         id: null,
-        purchaseNumber: 'PUR-' + Date.now().toString().slice(-4),
+        purchaseNumber: '',
         date: new Date().toISOString().split('T')[0],
         dueDate: new Date().toISOString().split('T')[0],
         vendor: null,
@@ -277,7 +247,6 @@ export const usePurchaseStore = create((set, get) => ({
         roundOff: false
     }),
 
-    // Set purchase for editing
     setPurchase: (purchase) => set({
         id: purchase.id,
         purchaseNumber: purchase.purchaseNumber,
@@ -290,5 +259,7 @@ export const usePurchaseStore = create((set, get) => ({
         weightSummary: purchase.weightSummary || { grossWeight: '', netWeight: '' },
         payment: purchase.payment || { isFullyPaid: false, amountPaid: 0, mode: 'Cash', notes: '' },
         roundOff: purchase.totals?.roundOffAmount !== 0
-    })
+    }),
+
+    clearError: () => set({ error: null }),
 }));

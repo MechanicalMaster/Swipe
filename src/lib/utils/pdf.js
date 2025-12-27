@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas';
 import { createRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { getTemplate } from '@/components/InvoiceTemplates';
+import { logger, LOG_EVENTS } from '@/lib/logger';
 
 export const generatePDF = async (data) => {
     const div = document.createElement('div');

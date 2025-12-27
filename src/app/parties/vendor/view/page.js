@@ -1,10 +1,10 @@
 'use client';
 
-import { db } from '@/lib/db';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePartyStore } from '@/lib/store/partyStore';
 import { usePurchaseStore } from '@/lib/store/purchaseStore';
+import { usePaymentStore } from '@/lib/store/paymentStore';
 import { shareText, downloadCSV, downloadPDFBlob } from '@/lib/utils/invoiceActions';
 import { FiArrowLeft, FiPhone, FiMail, FiShare2, FiMessageCircle, FiEdit2, FiMoreHorizontal, FiFileText, FiFile, FiPlusSquare, FiGitMerge, FiTrash2 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,7 @@ function VendorLedgerContent() {
     const id = searchParams.get('id');
     const { getVendor, deleteVendor } = usePartyStore();
     const { purchases, loadPurchases } = usePurchaseStore ? usePurchaseStore() : { purchases: [], loadPurchases: () => { } };
+    const { getPaymentsByParty } = usePaymentStore();
 
     const [vendor, setVendor] = useState(null);
     const [transactions, setTransactions] = useState([]);
@@ -148,8 +149,8 @@ function VendorLedgerContent() {
                     p.vendorId === vendor.id || p.vendor?.id === vendor.id
                 ) || [];
 
-                // Get Payments from 'payments' table for this vendor
-                const vendorPayments = await db.payments.where('partyId').equals(vendor.id).and(p => p.partyType === 'VENDOR').toArray();
+                // Get Payments from backend via paymentStore
+                const vendorPayments = await getPaymentsByParty(vendor.id);
 
                 const purchaseTxs = allPurchaseRecords.map(p => ({
                     id: `pur-${p.id}`,

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { TAG_TEMPLATES, DEFAULT_TEMPLATE_ID } from '@/lib/data/tagTemplates';
-import { db } from '@/lib/db';
+import { api } from '@/api/backendClient';
 import styles from './page.module.css';
 
 export default function LabelTemplatesPage() {
@@ -17,9 +17,9 @@ export default function LabelTemplatesPage() {
     useEffect(() => {
         const loadSavedTemplate = async () => {
             try {
-                const setting = await db.settings.get('selectedLabelTemplate');
-                if (setting) {
-                    setSelectedTemplate(setting.value);
+                const settings = await api.settings.get();
+                if (settings.selectedLabelTemplate) {
+                    setSelectedTemplate(settings.selectedLabelTemplate);
                 }
             } catch (err) {
                 console.error('Failed to load template setting:', err);
@@ -32,7 +32,7 @@ export default function LabelTemplatesPage() {
         setSelectedTemplate(templateId);
         setSaving(true);
         try {
-            await db.settings.put({ key: 'selectedLabelTemplate', value: templateId });
+            await api.settings.update('selectedLabelTemplate', templateId);
         } catch (err) {
             console.error('Failed to save template setting:', err);
         }

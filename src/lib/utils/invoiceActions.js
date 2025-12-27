@@ -6,7 +6,8 @@
  */
 
 import { generatePDF } from './pdf';
-import { db } from '@/lib/db';
+import { api } from '@/api/backendClient';
+import { logger, LOG_EVENTS } from '@/lib/logger';
 
 // ============================================================================
 // PLATFORM DETECTION
@@ -39,7 +40,7 @@ export const registerToastCallback = (callback) => {
  * @param {'success' | 'error' | 'info'} type - Toast type
  */
 export const showToast = (message, type = 'info') => {
-    console.log(`[Toast ${type}]: ${message}`);
+    logger.info(LOG_EVENTS.TOAST_SHOWN, { message, type });
     if (toastCallback) {
         toastCallback(message, type);
     } else {
@@ -75,24 +76,29 @@ const blobToBase64 = (blob) => {
  * @returns {Promise<{uri: string, path: string}>} File result with URI
  */
 const writeFileNative = async (fileName, blob, directory = 'Cache') => {
-    const { Filesystem, Directory } = await import('@capacitor/filesystem');
-    const base64 = await blobToBase64(blob);
+    try {
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        const base64 = await blobToBase64(blob);
 
-    const directoryMap = {
-        'Cache': Directory.Cache,
-        'Documents': Directory.Documents,
-        'Data': Directory.Data,
-        'External': Directory.External,
-        'ExternalStorage': Directory.ExternalStorage
-    };
+        const directoryMap = {
+            'Cache': Directory.Cache,
+            'Documents': Directory.Documents,
+            'Data': Directory.Data,
+            'External': Directory.External,
+            'ExternalStorage': Directory.ExternalStorage
+        };
 
-    const result = await Filesystem.writeFile({
-        path: fileName,
-        data: base64,
-        directory: directoryMap[directory] || Directory.Cache
-    });
+        const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64,
+            directory: directoryMap[directory] || Directory.Cache
+        });
 
-    return result;
+        return result;
+    } catch (error) {
+        logger.error('NATIVE_WRITE_FAILED', { fileName, error: error.message });
+        throw error;
+    }
 };
 
 // ============================================================================
@@ -111,17 +117,15 @@ export const shareInvoicePDF = async (invoice) => {
     }
 
     try {
-        // Get settings
-        const settings = await db.settings.get('templateId');
-        const company = await db.settings.get('companyDetails');
-        const lendingTemplate = await db.settings.get('lendingBillTemplateId');
+        // Get settings from backend API
+        const settings = await api.settings.get();
 
         const templateId = invoice.type === 'LENDING'
-            ? (lendingTemplate?.value || 'modern')
-            : (settings?.value || 'modern');
-        const companyDetails = company?.value || {};
+            ? (settings.lendingBillTemplateId || 'modern')
+            : (settings.templateId || 'modern');
+        const companyDetails = settings.companyDetails || {};
 
-        console.log('[ShareInvoice] Generating PDF...');
+        logger.info(LOG_EVENTS.INVOICE_PDF_GENERATING, { invoiceNumber: invoice.invoiceNumber });
         const blob = await generatePDF({
             ...invoice,
             templateId,
@@ -132,7 +136,7 @@ export const shareInvoicePDF = async (invoice) => {
         const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
 
         if (isNativePlatform()) {
-            console.log('[ShareInvoice] Native platform detected, using Capacitor');
+            logger.info(LOG_EVENTS.SHARE_PLATFORM_NATIVE, { fileName });
 
             // Write to cache for sharing
             const result = await writeFileNative(fileName, blob, 'Cache');
@@ -146,10 +150,10 @@ export const shareInvoicePDF = async (invoice) => {
                 dialogTitle: 'Send Invoice'
             });
 
-            console.log('[ShareInvoice] Shared successfully');
+            logger.info(LOG_EVENTS.INVOICE_SHARED, { method: 'native', invoiceNumber: invoice.invoiceNumber });
             return true;
         } else {
-            console.log('[ShareInvoice] Web platform, using navigator.share');
+            logger.info(LOG_EVENTS.SHARE_PLATFORM_WEB, { fileName });
             const file = new File([blob], fileName, { type: 'application/pdf' });
 
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -158,10 +162,11 @@ export const shareInvoicePDF = async (invoice) => {
                     text: `Please find attached invoice ${invoice.invoiceNumber}`,
                     files: [file]
                 });
+                logger.info(LOG_EVENTS.INVOICE_SHARED, { method: 'web_share', invoiceNumber: invoice.invoiceNumber });
                 return true;
             } else {
                 // Fallback: download the file
-                console.log('[ShareInvoice] Web Share API not available, downloading instead');
+                logger.info(LOG_EVENTS.SHARE_PLATFORM_WEB, { method: 'fallback_download' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -173,7 +178,7 @@ export const shareInvoicePDF = async (invoice) => {
             }
         }
     } catch (error) {
-        console.error('[ShareInvoice] Error:', error);
+        logger.error(LOG_EVENTS.INVOICE_SHARE_FAILED, { error: error.message, invoiceNumber: invoice?.invoiceNumber });
         if (error.name !== 'AbortError') {
             showToast('Failed to share invoice: ' + error.message, 'error');
         }
@@ -193,19 +198,18 @@ export const downloadInvoicePDF = async (invoice) => {
     }
 
     try {
-        const settings = await db.settings.get('templateId');
-        const company = await db.settings.get('companyDetails');
-        const lendingTemplate = await db.settings.get('lendingBillTemplateId');
+        // Get settings from backend API
+        const settings = await api.settings.get();
 
         const templateId = invoice.type === 'LENDING'
-            ? (lendingTemplate?.value || 'modern')
-            : (settings?.value || 'modern');
-        const companyDetails = company?.value || {};
+            ? (settings.lendingBillTemplateId || 'modern')
+            : (settings.templateId || 'modern');
+        const companyDetails = settings.companyDetails || {};
 
         const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
 
         if (isNativePlatform()) {
-            console.log('[DownloadInvoice] Native platform, saving to Documents');
+            logger.info(LOG_EVENTS.DOWNLOAD_PLATFORM_NATIVE, { fileName });
             const blob = await generatePDF({
                 ...invoice,
                 templateId,
@@ -215,15 +219,17 @@ export const downloadInvoicePDF = async (invoice) => {
 
             await writeFileNative(fileName, blob, 'Documents');
             showToast(`Invoice saved: ${fileName}`, 'success');
+            logger.info(LOG_EVENTS.INVOICE_DOWNLOADED, { fileName, platform: 'native' });
             return true;
         } else {
-            console.log('[DownloadInvoice] Web platform, using jsPDF save');
+            logger.info(LOG_EVENTS.DOWNLOAD_PLATFORM_WEB, { fileName });
             await generatePDF({ ...invoice, templateId, companyDetails });
             showToast('Invoice downloaded', 'success');
+            logger.info(LOG_EVENTS.INVOICE_DOWNLOADED, { fileName, platform: 'web' });
             return true;
         }
     } catch (error) {
-        console.error('[DownloadInvoice] Error:', error);
+        logger.error(LOG_EVENTS.INVOICE_DOWNLOAD_FAILED, { error: error.message });
         showToast('Failed to download invoice: ' + error.message, 'error');
         return false;
     }
@@ -239,12 +245,12 @@ export const shareText = async (options) => {
 
     try {
         if (isNativePlatform()) {
-            console.log('[ShareText] Using Capacitor Share');
+            logger.info(LOG_EVENTS.SHARE_PLATFORM_NATIVE, { type: 'text' });
             const { Share } = await import('@capacitor/share');
             await Share.share({ title, text, url, dialogTitle });
             return true;
         } else {
-            console.log('[ShareText] Using navigator.share');
+            logger.info(LOG_EVENTS.SHARE_PLATFORM_WEB, { type: 'text' });
             if (navigator.share) {
                 await navigator.share({ title, text, url });
                 return true;
@@ -254,7 +260,7 @@ export const shareText = async (options) => {
             }
         }
     } catch (error) {
-        console.error('[ShareText] Error:', error);
+        logger.error(LOG_EVENTS.SHARE_FAILED, { error: error.message });
         if (error.name !== 'AbortError') {
             showToast('Failed to share: ' + error.message, 'error');
         }
@@ -273,12 +279,12 @@ export const downloadCSV = async (csvContent, filename) => {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 
         if (isNativePlatform()) {
-            console.log('[DownloadCSV] Native platform, saving to Documents');
+            logger.info(LOG_EVENTS.DOWNLOAD_PLATFORM_NATIVE, { filename, type: 'csv' });
             await writeFileNative(filename, blob, 'Documents');
             showToast(`Exported: ${filename}`, 'success');
             return true;
         } else {
-            console.log('[DownloadCSV] Web platform, using download link');
+            logger.info(LOG_EVENTS.DOWNLOAD_PLATFORM_WEB, { filename, type: 'csv' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
@@ -292,7 +298,7 @@ export const downloadCSV = async (csvContent, filename) => {
             return true;
         }
     } catch (error) {
-        console.error('[DownloadCSV] Error:', error);
+        logger.error(LOG_EVENTS.INVOICE_DOWNLOAD_FAILED, { error: error.message, filename });
         showToast('Failed to export: ' + error.message, 'error');
         return false;
     }
@@ -307,12 +313,12 @@ export const downloadCSV = async (csvContent, filename) => {
 export const downloadPDFBlob = async (pdfBlob, filename) => {
     try {
         if (isNativePlatform()) {
-            console.log('[DownloadPDF] Native platform, saving to Documents');
+            logger.info(LOG_EVENTS.DOWNLOAD_PLATFORM_NATIVE, { filename });
             await writeFileNative(filename, pdfBlob, 'Documents');
             showToast(`Exported: ${filename}`, 'success');
             return true;
         } else {
-            console.log('[DownloadPDF] Web platform, using download link');
+            logger.info(LOG_EVENTS.DOWNLOAD_PLATFORM_WEB, { filename });
             const url = URL.createObjectURL(pdfBlob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
@@ -326,7 +332,7 @@ export const downloadPDFBlob = async (pdfBlob, filename) => {
             return true;
         }
     } catch (error) {
-        console.error('[DownloadPDF] Error:', error);
+        logger.error(LOG_EVENTS.INVOICE_DOWNLOAD_FAILED, { error: error.message, filename });
         showToast('Failed to export: ' + error.message, 'error');
         return false;
     }

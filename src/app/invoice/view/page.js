@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { db } from '@/lib/db';
+import { useInvoiceStore } from '@/lib/store/invoiceStore';
 import { formatCurrency } from '@/lib/utils/tax';
 import { shareInvoicePDF, downloadInvoicePDF } from '@/lib/utils/invoiceActions';
 import BottomSheet from '@/components/BottomSheet';
@@ -12,7 +12,6 @@ import {
     FiTruck, FiFileText, FiXCircle
 } from 'react-icons/fi';
 import CancelInvoiceModal from '@/components/CancelInvoiceModal';
-import { useInvoiceStore } from '@/lib/store/invoiceStore';
 
 function InvoiceViewContent() {
     const router = useRouter();
@@ -20,16 +19,21 @@ function InvoiceViewContent() {
     const id = searchParams.get('id');
     const [invoice, setInvoice] = useState(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { getInvoice, deleteInvoice } = useInvoiceStore();
 
     useEffect(() => {
         const loadInvoice = async () => {
             if (id) {
-                const inv = await db.invoices.get(Number(id));
-                setInvoice(inv);
+                try {
+                    const inv = await getInvoice(id);
+                    setInvoice(inv);
+                } catch (error) {
+                    console.error('Failed to load invoice:', error);
+                }
             }
         };
         loadInvoice();
-    }, [id]);
+    }, [id, getInvoice]);
 
     const handleShare = async () => {
         if (!invoice) return;
@@ -42,7 +46,6 @@ function InvoiceViewContent() {
     };
 
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-    const { deleteInvoice } = useInvoiceStore();
 
     const handleCancelInvoice = async (reason) => {
         if (invoice) {

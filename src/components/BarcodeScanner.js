@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { FiX, FiZap, FiZapOff, FiCamera, FiAlertCircle } from 'react-icons/fi';
 import styles from './BarcodeScanner.module.css';
+import { logger, LOG_EVENTS } from '@/lib/logger';
 
 // Permission states
 const PERMISSION_STATE = {
@@ -68,7 +69,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
             }
         } catch (err) {
             // Permissions API might not support 'camera' query, proceed anyway
-            console.log('Permission query not supported:', err);
+            logger.info(LOG_EVENTS.PERMISSION_CHECK, { status: 'query_unsupported', error: err.message });
             setPermissionState(PERMISSION_STATE.PROMPT);
             return true;
         }
@@ -117,6 +118,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
                 (decodedText) => {
                     // Successfully scanned
                     stopScanner();
+                    logger.info(LOG_EVENTS.PRODUCT_SCAN, { barcode: decodedText });
                     onScan(decodedText);
                 },
                 (errorMessage) => {
@@ -124,7 +126,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
                 }
             );
         } catch (err) {
-            console.error('Camera/Scanner error:', err);
+            logger.error(LOG_EVENTS.PRODUCT_SCAN_ERROR, { error: err.message, name: err.name });
 
             // Handle specific error types
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -190,7 +192,7 @@ export default function BarcodeScanner({ isOpen, onScan, onClose, onManualEntry 
                 html5QrCodeRef.current = null;
             } catch (err) {
                 // Silently ignore stop errors
-                console.warn('Scanner stop warning:', err);
+                logger.warn('SCANNER_STOP_WARNING', { error: err.message });
             }
         }
     };

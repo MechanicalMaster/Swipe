@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
 import { useMasterStore } from '@/lib/store/masterStore';
-import { db } from '@/lib/db';
+import { api } from '@/api/backendClient';
 import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp, FiLock, FiUnlock } from 'react-icons/fi';
 import styles from '../page.module.css'; // Reuse styles
 
@@ -89,9 +89,42 @@ export default function EditProductPage() {
         const loadProduct = async () => {
             if (!id) return;
             try {
-                const product = await db.products.get(Number(id));
+                const product = await api.products.get(id);
                 if (product) {
-                    setFormData(prev => ({ ...prev, ...product }));
+                    setFormData(prev => ({
+                        ...prev,
+                        ...product,
+                        // Flatten Metal Attributes
+                        metalType: product.metal?.type || 'Gold',
+                        metalColor: product.metal?.color || 'Yellow',
+                        purity: product.metal?.purity || '22K',
+                        grossWeight: product.metal?.grossWeight || '',
+                        netWeight: product.metal?.netWeight || '',
+                        wastagePercentage: product.metal?.wastagePercentage || '',
+                        wastageWeight: product.metal?.wastageWeight || '',
+                        makingCharges: product.metal?.makingCharges || '',
+                        makingChargesType: product.metal?.makingChargesType || 'per_gram',
+                        metalRateRef: product.metal?.rateRef || '',
+
+                        // Flatten Gemstone Attributes
+                        hasStones: !!product.gemstone,
+                        stoneType: product.gemstone?.type || '',
+                        stoneCount: product.gemstone?.count || '',
+                        stoneWeight: product.gemstone?.weight || '',
+                        stoneShape: product.gemstone?.shape || '',
+                        stoneClarity: product.gemstone?.clarity || '',
+                        stoneColor: product.gemstone?.color || '',
+                        stoneCut: product.gemstone?.cut || '',
+                        stoneCertification: product.gemstone?.certification || '',
+                        stonePrice: product.gemstone?.price || '',
+                        stoneSetting: product.gemstone?.setting || '',
+
+                        // Flatten Design Attributes
+                        size: product.design?.size || '',
+                        pattern: product.design?.pattern || '',
+                        customizable: product.design?.customizable || false,
+                        engravingText: product.design?.engravingText || ''
+                    }));
                 }
             } catch (error) {
                 console.error('Failed to load product', error);
@@ -105,21 +138,80 @@ export default function EditProductPage() {
     const handleSave = async () => {
         if (!formData.name) return alert('Product Name is required');
 
+        // Audit Log for Manual SKU - via backend API
         if (!skuLocked) {
             try {
-                await db.audit_logs.add({
+                await api.auditLogs.create({
                     entityType: 'product',
-                    entityId: Number(id),
+                    entityId: id,
                     action: 'MANUAL_SKU_OVERRIDE',
                     details: `SKU updated to ${formData.sku}`,
-                    timestamp: new Date()
                 });
             } catch (e) {
                 console.error("Failed to log audit", e);
             }
         }
 
-        await updateProduct(Number(id), formData);
+        const payload = {
+            type: formData.type,
+            name: formData.name,
+            sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : 0,
+            purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : 0,
+            taxRate: formData.taxRate,
+            unit: formData.unit,
+            hsn: formData.hsn, // Edit page has HSN
+            category: formData.category,
+            subCategory: formData.subCategory,
+            sku: formData.sku,
+            description: formData.description,
+            vendorRef: formData.vendorRef,
+            procurementDate: formData.procurementDate,
+            hallmarkCert: formData.hallmarkCert,
+            barcode: formData.barcode,
+            launchDate: formData.launchDate || null,
+            showOnline: formData.showOnline,
+            notForSale: formData.notForSale,
+            images: formData.images,
+            occasion: formData.occasion,
+            collection: formData.collection,
+            tags: formData.tags,
+
+            // Nested Objects
+            metal: {
+                type: formData.metalType,
+                color: formData.metalColor,
+                purity: formData.purity,
+                grossWeight: Number(formData.grossWeight || 0),
+                netWeight: Number(formData.netWeight || 0),
+                wastagePercentage: Number(formData.wastagePercentage || 0),
+                wastageWeight: Number(formData.wastageWeight || 0),
+                makingCharges: Number(formData.makingCharges || 0),
+                makingChargesType: formData.makingChargesType,
+                rateRef: formData.metalRateRef
+            },
+
+            gemstone: formData.hasStones ? {
+                type: formData.stoneType,
+                count: Number(formData.stoneCount || 0),
+                weight: Number(formData.stoneWeight || 0),
+                shape: formData.stoneShape,
+                clarity: formData.stoneClarity,
+                color: formData.stoneColor,
+                cut: formData.stoneCut,
+                certification: formData.stoneCertification,
+                price: Number(formData.stonePrice || 0),
+                setting: formData.stoneSetting
+            } : null,
+
+            design: {
+                size: formData.size,
+                pattern: formData.pattern,
+                customizable: formData.customizable,
+                engravingText: formData.engravingText
+            }
+        };
+
+        await updateProduct(id, payload);
         router.back();
     };
 

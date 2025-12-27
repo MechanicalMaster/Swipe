@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { useInvoiceStore } from '@/lib/store/invoiceStore';
+import { usePurchaseStore } from '@/lib/store/purchaseStore';
 import { formatCurrency } from '@/lib/utils/tax';
 import { FiPlus, FiHeadphones } from 'react-icons/fi';
 import styles from './page.module.css';
@@ -11,18 +12,13 @@ import ComingSoon from '@/components/ComingSoon';
 
 export default function BillsPage() {
     const [activeTab, setActiveTab] = useState('sales');
-    const [invoices, setInvoices] = useState([]);
-    const [purchases, setPurchases] = useState([]);
+    const { invoices, loadInvoices } = useInvoiceStore();
+    const { purchases, loadPurchases } = usePurchaseStore();
 
     useEffect(() => {
-        const loadData = async () => {
-            const inv = await db.invoices.toArray();
-            const pur = await db.purchases.toArray();
-            setInvoices(inv.reverse());
-            setPurchases(pur.reverse());
-        };
-        loadData();
-    }, []);
+        loadInvoices();
+        loadPurchases();
+    }, [loadInvoices, loadPurchases]);
 
     const currentList = activeTab === 'sales' ? invoices : purchases;
     const createLink = activeTab === 'sales' ? '/invoice/create' : '/bills/purchase/create';

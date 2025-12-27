@@ -104,22 +104,77 @@ export default function AddProductPage() {
     const handleSave = async () => {
         if (!formData.name) return alert('Product Name is required');
 
-        // Audit Log for Manual SKU
+        // Audit Log for Manual SKU - via backend API
         if (!skuLocked) {
             try {
-                await db.audit_logs.add({
+                const { api } = await import('@/api/backendClient');
+                await api.auditLogs.create({
                     entityType: 'product',
-                    entityId: 0, // ID unknown yet, or we can just log the SKU
+                    entityId: null, // ID unknown yet
                     action: 'MANUAL_SKU_OVERRIDE',
                     details: `SKU set to ${formData.sku}`,
-                    timestamp: new Date()
                 });
             } catch (e) {
                 console.error("Failed to log audit", e);
             }
         }
 
-        await addProduct(formData);
+        const payload = {
+            type: formData.type,
+            name: formData.name,
+            sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : 0,
+            purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : 0,
+            taxRate: formData.taxRate,
+            unit: formData.unit,
+            category: formData.category,
+            subCategory: formData.subCategory,
+            sku: formData.sku,
+            description: formData.description,
+            vendorRef: formData.vendorRef,
+            procurementDate: formData.procurementDate,
+            hallmarkCert: formData.hallmarkCert,
+            barcode: formData.barcode,
+            launchDate: formData.launchDate || null,
+            showOnline: formData.showOnline,
+            notForSale: formData.notForSale,
+            images: formData.images,
+
+            // Nested Objects
+            metal: {
+                type: formData.metalType,
+                color: formData.metalColor,
+                purity: formData.purity,
+                grossWeight: Number(formData.grossWeight || 0),
+                netWeight: Number(formData.netWeight || 0),
+                wastagePercentage: Number(formData.wastagePercentage || 0),
+                wastageWeight: Number(formData.wastageWeight || 0),
+                makingCharges: Number(formData.makingCharges || 0),
+                makingChargesType: formData.makingChargesType,
+                rateRef: formData.metalRateRef
+            },
+
+            gemstone: formData.hasStones ? {
+                type: formData.stoneType,
+                count: Number(formData.stoneCount || 0),
+                weight: Number(formData.stoneWeight || 0),
+                shape: formData.stoneShape,
+                clarity: formData.stoneClarity,
+                color: formData.stoneColor,
+                cut: formData.stoneCut,
+                certification: formData.stoneCertification,
+                price: Number(formData.stonePrice || 0),
+                setting: formData.stoneSetting
+            } : null,
+
+            design: {
+                size: formData.size,
+                pattern: formData.pattern,
+                customizable: formData.customizable,
+                engravingText: formData.engravingText
+            }
+        };
+
+        await addProduct(payload);
         if (returnUrl) {
             router.push(returnUrl);
         } else {

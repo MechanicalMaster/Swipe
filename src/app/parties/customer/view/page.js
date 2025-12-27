@@ -1,10 +1,10 @@
 'use client';
 
-import { db } from '@/lib/db';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePartyStore } from '@/lib/store/partyStore';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
+import { usePaymentStore } from '@/lib/store/paymentStore';
 import { shareText, downloadCSV, downloadPDFBlob } from '@/lib/utils/invoiceActions';
 import { FiArrowLeft, FiPhone, FiMail, FiShare2, FiMessageCircle, FiEdit2, FiMoreHorizontal, FiFileText, FiFile, FiPlusSquare, FiGitMerge, FiTrash2 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,15 +16,15 @@ function CustomerLedgerContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
-    const { getCustomer } = usePartyStore();
+    const { getCustomer, deleteCustomer } = usePartyStore();
     const { invoices, loadInvoices } = useInvoiceStore();
+    const { payments, loadPayments, getPaymentsByParty } = usePaymentStore();
 
     const [customer, setCustomer] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [activeTab, setActiveTab] = useState('ledger');
     const [selectedInvoice, setSelectedInvoice] = useState(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { deleteCustomer } = usePartyStore();
 
     const handleWhatsApp = () => {
         if (customer.phone) {
@@ -172,8 +172,8 @@ function CustomerLedgerContent() {
                 const realInvoices = allInvoiceRecords.filter(inv => !inv.type || inv.type === 'invoice');
                 const legacyPayments = allInvoiceRecords.filter(inv => inv.type === 'payment_in' || inv.type === 'payment_out');
 
-                // Get New Payments from 'payments' table
-                const newPayments = await db.payments.where('partyId').equals(customer.id).toArray();
+                // Get New Payments from backend via paymentStore
+                const newPayments = await getPaymentsByParty(customer.id);
 
                 const invoiceTxs = realInvoices.map(inv => ({
                     id: `inv-${inv.id}`,

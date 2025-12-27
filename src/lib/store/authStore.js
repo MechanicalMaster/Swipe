@@ -1,42 +1,98 @@
 import { create } from 'zustand';
-import { db } from '@/lib/db';
+import { api, setToken, clearToken, ApiError } from '@/api/backendClient';
 
 export const useAuthStore = create((set, get) => ({
     isAuthenticated: false,
     isLoading: true,
+    user: null,
     phoneNumber: '',
     currentStep: 'welcome', // welcome, phone, otp
+    error: null,
 
+    // Check if user is authenticated by validating token with backend
     loadAuth: async () => {
+        set({ isLoading: true, error: null });
         try {
-            const auth = await db.settings.get('auth');
-            if (auth && auth.value) {
-                set({ isAuthenticated: true, phoneNumber: auth.value.phoneNumber, isLoading: false });
-            } else {
-                set({ isAuthenticated: false, isLoading: false });
-            }
+            const user = await api.auth.me();
+            set({
+                isAuthenticated: true,
+                user,
+                phoneNumber: user.phone || '',
+                isLoading: false
+            });
         } catch (error) {
-            console.error('Failed to load auth:', error);
-            set({ isAuthenticated: false, isLoading: false });
+            // Token invalid or expired
+            clearToken();
+            set({
+                isAuthenticated: false,
+                user: null,
+                isLoading: false
+            });
         }
     },
 
     setStep: (step) => set({ currentStep: step }),
 
-    setPhoneNumber: (phone) => set({ phoneNumber: phone, currentStep: 'otp' }),
+    setPhoneNumber: (phone) => set({ phoneNumber: phone }),
 
-    verifyOTP: async (otp) => {
-        if (otp === '111111') {
-            const authData = { phoneNumber: get().phoneNumber, authenticatedAt: new Date() };
-            await db.settings.put({ key: 'auth', value: authData });
-            set({ isAuthenticated: true, currentStep: 'welcome' });
+    // Request OTP from backend
+    requestOTP: async (phone) => {
+        set({ isLoading: true, error: null });
+        try {
+            await api.auth.requestOTP(phone);
+            set({ phoneNumber: phone, currentStep: 'otp', isLoading: false });
             return true;
+        } catch (error) {
+            set({ error: error.message || 'Failed to send OTP', isLoading: false });
+            return false;
         }
-        return false;
+    },
+
+    // Verify OTP and login
+    verifyOTP: async (otp) => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await api.auth.login({
+                phone: get().phoneNumber,
+                otp
+            });
+
+            // Store JWT token
+            if (response.token) {
+                setToken(response.token);
+            }
+
+            set({
+                isAuthenticated: true,
+                user: response.user || { phone: get().phoneNumber },
+                currentStep: 'welcome',
+                isLoading: false
+            });
+            return true;
+        } catch (error) {
+            set({
+                error: error.message || 'Invalid OTP',
+                isLoading: false
+            });
+            return false;
+        }
     },
 
     logout: async () => {
-        await db.settings.delete('auth');
-        set({ isAuthenticated: false, phoneNumber: '', currentStep: 'welcome' });
-    }
+        try {
+            await api.auth.logout();
+        } catch (error) {
+            // Ignore logout errors, clear local state anyway
+        }
+        clearToken();
+        set({
+            isAuthenticated: false,
+            user: null,
+            phoneNumber: '',
+            currentStep: 'welcome',
+            error: null
+        });
+    },
+
+    clearError: () => set({ error: null }),
 }));

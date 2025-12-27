@@ -1,21 +1,22 @@
-// Mock the database
-jest.mock('@/lib/db', () => ({
-    db: {
+/**
+ * @jest-environment jsdom
+ */
+
+// Mock the API client
+jest.mock('@/api/backendClient', () => ({
+    api: {
         invoices: {
-            toArray: jest.fn(),
-            add: jest.fn(),
+            list: jest.fn(),
+            create: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
+            get: jest.fn(),
         },
-        payments: { add: jest.fn() },
-        payment_allocations: { add: jest.fn() },
-        customers: { get: jest.fn(), update: jest.fn() },
-        transaction: jest.fn((mode, tables, callback) => callback()),
     },
 }));
 
 import { useInvoiceStore } from '../invoiceStore';
-import { db } from '@/lib/db';
+import { api } from '@/api/backendClient';
 
 describe('invoiceStore', () => {
     beforeEach(() => {
@@ -410,6 +411,36 @@ describe('invoiceStore', () => {
             expect(state.customer).toBeNull();
             expect(state.items).toEqual([]);
             expect(state.type).toBe('INVOICE');
+        });
+    });
+
+    describe('API operations', () => {
+        it('should load invoices from API', async () => {
+            const mockInvoices = [
+                { id: 1, invoiceNumber: 'INV-001' },
+                { id: 2, invoiceNumber: 'INV-002' },
+            ];
+            api.invoices.list.mockResolvedValue(mockInvoices);
+
+            const { loadInvoices } = useInvoiceStore.getState();
+            await loadInvoices();
+
+            expect(api.invoices.list).toHaveBeenCalled();
+            expect(useInvoiceStore.getState().invoices).toEqual([
+                { id: 2, invoiceNumber: 'INV-002' },
+                { id: 1, invoiceNumber: 'INV-001' },
+            ]);
+        });
+
+        it('should get single invoice from API', async () => {
+            const mockInvoice = { id: 1, invoiceNumber: 'INV-001' };
+            api.invoices.get.mockResolvedValue(mockInvoice);
+
+            const { getInvoice } = useInvoiceStore.getState();
+            const result = await getInvoice(1);
+
+            expect(api.invoices.get).toHaveBeenCalledWith(1);
+            expect(result).toEqual(mockInvoice);
         });
     });
 });

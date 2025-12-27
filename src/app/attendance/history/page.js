@@ -1,32 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/db';
+import { useAttendanceStore } from '@/lib/store/attendanceStore';
 import { FiArrowLeft, FiCalendar } from 'react-icons/fi';
 import styles from '../page.module.css'; // Reusing styles
 
 export default function AttendanceHistoryPage() {
     const router = useRouter();
-    const [history, setHistory] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { history, isLoading, loadHistory } = useAttendanceStore();
+
+    const userId = '1'; // Default user ID
 
     useEffect(() => {
-        const loadHistory = async () => {
-            try {
-                const logs = await db.attendance_log
-                    .orderBy('loginTimestamp')
-                    .reverse()
-                    .toArray();
-                setHistory(logs);
-            } catch (error) {
-                console.error('Error loading history:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadHistory();
-    }, []);
+        loadHistory(userId, 100); // Load more history for this page
+    }, [loadHistory]);
 
     const formatFullDate = (dateStr) => {
         return new Date(dateStr).toLocaleDateString('en-IN', {
@@ -35,6 +23,7 @@ export default function AttendanceHistoryPage() {
     };
 
     const formatTime = (isoString) => {
+        if (!isoString) return '';
         return new Date(isoString).toLocaleTimeString('en-IN', {
             hour: '2-digit', minute: '2-digit', hour12: true
         });
@@ -55,7 +44,7 @@ export default function AttendanceHistoryPage() {
             <div className={styles.content}>
                 <div className={styles.historySection}>
                     <div className={styles.historyList}>
-                        {loading ? (
+                        {isLoading ? (
                             <div className={styles.emptyState}>Loading...</div>
                         ) : history.length === 0 ? (
                             <div className={styles.emptyState}>No history available</div>
@@ -67,7 +56,7 @@ export default function AttendanceHistoryPage() {
                                             {formatFullDate(log.loginDate)}
                                         </div>
                                         <div className={styles.historyTime}>
-                                            Login at {formatTime(log.loginTimestamp)}
+                                            Login at {formatTime(log.loginAt || log.loginTimestamp)}
                                         </div>
                                     </div>
                                     <div className={styles.statusTag}>Present</div>

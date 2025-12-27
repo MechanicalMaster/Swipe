@@ -32,6 +32,7 @@ const menuItems = [
         items: [
             { label: 'Document Settings', icon: FiFileText, href: '/coming-soon' },
             { label: 'General Settings', icon: FiSettings, href: '/coming-soon' },
+            { label: 'Server Config', icon: FiSettings, href: '/more/server-config' },
             { label: 'Invoice Templates', icon: FiFileText, href: '/more/templates' },
             { label: 'Lending Bill Template', icon: FiFileText, href: '/more/templates/lending' },
             { label: 'Label Templates', icon: FiFileText, href: '/more/label-templates' },

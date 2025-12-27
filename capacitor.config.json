@@ -3,6 +3,7 @@
     "appName": "Swipe",
     "webDir": "out",
     "server": {
-        "androidScheme": "https"
+        "androidScheme": "https",
+        "cleartext": true
     }
 }

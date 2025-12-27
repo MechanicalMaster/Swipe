@@ -2,78 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/db';
+import { useAttendanceStore } from '@/lib/store/attendanceStore';
 import { FiArrowLeft, FiCheckCircle, FiClock, FiCalendar } from 'react-icons/fi';
 import styles from './page.module.css';
 import Link from 'next/link';
 
 export default function AttendancePage() {
     const router = useRouter();
-    const [todayLogin, setTodayLogin] = useState(null);
-    const [history, setHistory] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const {
+        todayAttendance,
+        history,
+        isLoggedIn,
+        isLoading,
+        login,
+        checkTodayStatus,
+        loadHistory
+    } = useAttendanceStore();
 
-    const checkLoginStatus = async () => {
-        try {
-            // Get today's date string YYYY-MM-DD
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-
-            // Check if record exists for today
-            // Assuming simple single user for now as per app structure, or userId=1
-            const record = await db.attendance_log
-                .where('loginDate')
-                .equals(todayStr)
-                .first();
-
-            setTodayLogin(record || null);
-
-            // Load last 5 history items
-            const recentLogs = await db.attendance_log
-                .orderBy('loginTimestamp')
-                .reverse()
-                .limit(5)
-                .toArray();
-
-            setHistory(recentLogs);
-        } catch (error) {
-            console.error('Error checking attendance:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const userId = '1'; // Default user ID
 
     useEffect(() => {
-        checkLoginStatus();
-    }, []);
+        checkTodayStatus(userId);
+        loadHistory(userId, 5);
+    }, [checkTodayStatus, loadHistory]);
 
     const handleLogin = async () => {
         try {
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-
-            // Double check
-            const exists = await db.attendance_log
-                .where('loginDate')
-                .equals(todayStr)
-                .first();
-
-            if (exists) {
-                alert('Already logged in for today!');
-                setTodayLogin(exists);
-                return;
-            }
-
-            const newRecord = {
-                userId: 1, // Default user
-                loginDate: todayStr,
-                loginTimestamp: now.toISOString(),
-                created_at: now.toISOString()
-            };
-
-            await db.attendance_log.add(newRecord);
-            await checkLoginStatus(); // Refresh
-
+            await login(userId);
         } catch (error) {
             console.error('Login failed:', error);
             alert('Failed to record login. Please try again.');
@@ -87,12 +42,13 @@ export default function AttendancePage() {
     };
 
     const formatTime = (isoString) => {
+        if (!isoString) return '';
         return new Date(isoString).toLocaleTimeString('en-IN', {
             hour: '2-digit', minute: '2-digit', hour12: true
         });
     };
 
-    if (loading) return <div className={styles.container}><div className={styles.content}>Loading...</div></div>;
+    if (isLoading) return <div className={styles.container}><div className={styles.content}>Loading...</div></div>;
 
     return (
         <div className={styles.container}>
@@ -114,11 +70,11 @@ export default function AttendancePage() {
                         {formatDate(new Date())}
                     </div>
 
-                    {todayLogin ? (
+                    {todayAttendance ? (
                         <div className={styles.successBadge}>
                             <FiCheckCircle className={styles.successIcon} />
                             <div className={styles.timeDisplay}>
-                                {formatTime(todayLogin.loginTimestamp)}
+                                {formatTime(todayAttendance.loginAt || todayAttendance.loginTimestamp)}
                             </div>
                             <div className={styles.statusLabel}>
                                 Present Today
@@ -151,7 +107,7 @@ export default function AttendancePage() {
                                             {new Date(log.loginDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                         </div>
                                         <div className={styles.historyTime}>
-                                            {formatTime(log.loginTimestamp)}
+                                            {formatTime(log.loginAt || log.loginTimestamp)}
                                         </div>
                                     </div>
                                     <div className={styles.statusTag}>Present</div>

@@ -6,7 +6,6 @@ import { usePartyStore } from '@/lib/store/partyStore';
 import { useSettingsStore } from '@/lib/store/settingsStore';
 import { useEffect } from 'react';
 import { formatCurrency } from '@/lib/utils/tax';
-import { db } from '@/lib/db';
 import { generatePDF } from '@/lib/utils/pdf';
 import { FiPlus, FiTrash2, FiCalendar, FiUser, FiBox, FiArrowLeft } from 'react-icons/fi';
 import styles from './InvoiceForm.module.css';

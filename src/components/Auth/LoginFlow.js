@@ -6,16 +6,18 @@ import styles from './LoginFlow.module.css';
 import LandingPage from '../LandingPage/LandingPage';
 
 export default function LoginFlow() {
-    const { currentStep, setStep, phoneNumber, setPhoneNumber, verifyOTP } = useAuthStore();
+    const { currentStep, setStep, phoneNumber, requestOTP, verifyOTP, isLoading } = useAuthStore();
     const [phone, setPhone] = useState(phoneNumber || '');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [error, setError] = useState('');
 
-    const handlePhoneSubmit = () => {
+    const handlePhoneSubmit = async () => {
         if (phone.length === 10) {
-            setPhoneNumber(phone);
-            setStep('otp');
             setError('');
+            const success = await requestOTP(phone);
+            if (!success) {
+                setError('Failed to send OTP. Please try again.');
+            }
         } else {
             setError('Please enter a valid 10-digit phone number');
         }
@@ -59,8 +61,8 @@ export default function LoginFlow() {
                         maxLength={10}
                     />
                     {error && <div className={styles.error}>{error}</div>}
-                    <button className={styles.button} onClick={handlePhoneSubmit}>
-                        Send OTP
+                    <button className={styles.button} onClick={handlePhoneSubmit} disabled={isLoading}>
+                        {isLoading ? 'Sending...' : 'Send OTP'}
                     </button>
                     <button className={styles.backButton} onClick={() => setStep('welcome')}>
                         Back

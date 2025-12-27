@@ -1,22 +1,25 @@
-// Mock the database
-jest.mock('@/lib/db', () => ({
-    db: {
+/**
+ * @jest-environment jsdom
+ */
+
+// Mock the API client
+jest.mock('@/api/backendClient', () => ({
+    api: {
         products: {
-            toArray: jest.fn(),
-            add: jest.fn(),
+            list: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
             delete: jest.fn(),
-            update: jest.fn(),
-        },
-        sequences: {
             get: jest.fn(),
-            add: jest.fn(),
-            update: jest.fn(),
+        },
+        media: {
+            upload: jest.fn(),
         },
     },
 }));
 
 import { useProductStore } from '../productStore';
-import { db } from '@/lib/db';
+import { api } from '@/api/backendClient';
 
 describe('productStore', () => {
     beforeEach(() => {
@@ -24,49 +27,9 @@ describe('productStore', () => {
         useProductStore.setState({
             products: [],
             isLoading: false,
+            error: null,
         });
         jest.clearAllMocks();
-    });
-
-    describe('generateSKU', () => {
-        it('should return empty string when category is missing', async () => {
-            const { generateSKU } = useProductStore.getState();
-            const result = await generateSKU('', 'Ring');
-            expect(result).toBe('');
-        });
-
-        it('should return empty string when subCategory is missing', async () => {
-            const { generateSKU } = useProductStore.getState();
-            const result = await generateSKU('Gold', '');
-            expect(result).toBe('');
-        });
-
-        it('should generate SKU with correct format when no sequence exists', async () => {
-            db.sequences.get.mockResolvedValue(null);
-
-            const { generateSKU } = useProductStore.getState();
-            const result = await generateSKU('Gold', 'Ring');
-
-            expect(result).toBe('GOL-RIN-000001');
-        });
-
-        it('should generate SKU with incremented sequence', async () => {
-            db.sequences.get.mockResolvedValue({ key: 'product_sku', value: 42 });
-
-            const { generateSKU } = useProductStore.getState();
-            const result = await generateSKU('Silver', 'Necklace');
-
-            expect(result).toBe('SIL-NEC-000043');
-        });
-
-        it('should handle errors gracefully', async () => {
-            db.sequences.get.mockRejectedValue(new Error('DB error'));
-
-            const { generateSKU } = useProductStore.getState();
-            const result = await generateSKU('Gold', 'Ring');
-
-            expect(result).toBe('');
-        });
     });
 
     describe('loadProducts', () => {
@@ -75,7 +38,7 @@ describe('productStore', () => {
                 { id: 1, name: 'Product 1' },
                 { id: 2, name: 'Product 2' },
             ];
-            db.products.toArray.mockResolvedValue(mockProducts);
+            api.products.list.mockResolvedValue(mockProducts);
 
             const { loadProducts } = useProductStore.getState();
             await loadProducts();
@@ -89,7 +52,7 @@ describe('productStore', () => {
         });
 
         it('should set isLoading to true while loading', async () => {
-            db.products.toArray.mockImplementation(() => new Promise(() => { })); // Never resolves
+            api.products.list.mockImplementation(() => new Promise(() => { })); // Never resolves
 
             const { loadProducts } = useProductStore.getState();
             loadProducts(); // Don't await
@@ -97,55 +60,62 @@ describe('productStore', () => {
             expect(useProductStore.getState().isLoading).toBe(true);
         });
 
-        it('should handle errors and set isLoading to false', async () => {
-            db.products.toArray.mockRejectedValue(new Error('DB error'));
+        it('should handle errors and set error state', async () => {
+            api.products.list.mockRejectedValue(new Error('API error'));
 
             const { loadProducts } = useProductStore.getState();
             await loadProducts();
 
-            expect(useProductStore.getState().isLoading).toBe(false);
+            const state = useProductStore.getState();
+            expect(state.isLoading).toBe(false);
+            expect(state.error).toBe('API error');
         });
     });
 
     describe('addProduct', () => {
-        it('should add product to database and state', async () => {
-            db.products.add.mockResolvedValue(123);
-            db.sequences.get.mockResolvedValue({ key: 'product_sku', value: 1 });
-            db.sequences.update.mockResolvedValue(1);
-
+        it('should add product via API and update state', async () => {
             const newProduct = { name: 'Gold Ring', category: 'Gold' };
-            const { addProduct } = useProductStore.getState();
-            const id = await addProduct(newProduct);
+            const savedProduct = { id: 123, ...newProduct, sku: 'GOL-RIN-000001' };
 
-            expect(id).toBe(123);
-            expect(db.products.add).toHaveBeenCalledWith(expect.objectContaining({
-                name: 'Gold Ring',
-                category: 'Gold',
-                createdAt: expect.any(Date),
-            }));
+            api.products.create.mockResolvedValue(savedProduct);
+            api.products.list.mockResolvedValue([savedProduct]);
+
+            const { addProduct } = useProductStore.getState();
+            const result = await addProduct(newProduct);
+
+            expect(api.products.create).toHaveBeenCalledWith(newProduct);
+            expect(result).toEqual(savedProduct);
 
             const state = useProductStore.getState();
-            expect(state.products[0]).toEqual(expect.objectContaining({
-                id: 123,
-                name: 'Gold Ring',
-            }));
+            expect(state.products[0]).toEqual(savedProduct);
+        });
+
+        it('should handle add errors', async () => {
+            api.products.create.mockRejectedValue(new Error('Failed to create'));
+
+            const { addProduct } = useProductStore.getState();
+
+            await expect(addProduct({ name: 'Test' })).rejects.toThrow('Failed to create');
+            expect(useProductStore.getState().error).toBe('Failed to create');
         });
     });
 
     describe('deleteProduct', () => {
-        it('should remove product from database and state', async () => {
+        it('should delete product via API and update state', async () => {
             useProductStore.setState({
                 products: [
                     { id: 1, name: 'Product 1' },
                     { id: 2, name: 'Product 2' },
                 ],
             });
-            db.products.delete.mockResolvedValue(undefined);
+
+            api.products.delete.mockResolvedValue();
+            api.products.list.mockResolvedValue([{ id: 2, name: 'Product 2' }]);
 
             const { deleteProduct } = useProductStore.getState();
             await deleteProduct(1);
 
-            expect(db.products.delete).toHaveBeenCalledWith(1);
+            expect(api.products.delete).toHaveBeenCalledWith(1);
             expect(useProductStore.getState().products).toEqual([
                 { id: 2, name: 'Product 2' },
             ]);
@@ -153,43 +123,31 @@ describe('productStore', () => {
     });
 
     describe('updateProduct', () => {
-        it('should update product in database and state', async () => {
+        it('should update product via API and update state', async () => {
             useProductStore.setState({
                 products: [{ id: 1, name: 'Old Name', price: 100 }],
             });
-            db.products.update.mockResolvedValue(1);
+
+            const updatedProduct = { id: 1, name: 'New Name', price: 100 };
+            api.products.update.mockResolvedValue(updatedProduct);
+            api.products.list.mockResolvedValue([updatedProduct]);
 
             const { updateProduct } = useProductStore.getState();
             await updateProduct(1, { name: 'New Name' });
 
-            expect(db.products.update).toHaveBeenCalledWith(1, { name: 'New Name' });
-            expect(useProductStore.getState().products[0]).toEqual({
-                id: 1,
-                name: 'New Name',
-                price: 100,
-            });
+            expect(api.products.update).toHaveBeenCalledWith(1, { name: 'New Name' });
+            expect(useProductStore.getState().products[0]).toEqual(updatedProduct);
         });
     });
 
-    describe('incrementSKUSequence', () => {
-        it('should create sequence if it does not exist', async () => {
-            db.sequences.get.mockResolvedValue(null);
-            db.sequences.add.mockResolvedValue(1);
+    describe('clearError', () => {
+        it('should clear the error state', () => {
+            useProductStore.setState({ error: 'Some error' });
 
-            const { incrementSKUSequence } = useProductStore.getState();
-            await incrementSKUSequence();
+            const { clearError } = useProductStore.getState();
+            clearError();
 
-            expect(db.sequences.add).toHaveBeenCalledWith({ key: 'product_sku', value: 1 });
-        });
-
-        it('should increment existing sequence', async () => {
-            db.sequences.get.mockResolvedValue({ key: 'product_sku', value: 5 });
-            db.sequences.update.mockResolvedValue(1);
-
-            const { incrementSKUSequence } = useProductStore.getState();
-            await incrementSKUSequence();
-
-            expect(db.sequences.update).toHaveBeenCalledWith('product_sku', { value: 6 });
+            expect(useProductStore.getState().error).toBeNull();
         });
     });
 });

@@ -3,7 +3,6 @@
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
-import { db } from '@/lib/db';
 import InvoiceForm from '@/components/InvoiceForm';
 import { FiArrowLeft } from 'react-icons/fi';
 
@@ -11,16 +10,22 @@ function InvoiceEditContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
-    const { setInvoice, resetInvoice } = useInvoiceStore();
+    const { setInvoice, resetInvoice, getInvoice } = useInvoiceStore();
 
     useEffect(() => {
         const loadInvoice = async () => {
             if (id) {
-                const inv = await db.invoices.get(Number(id));
-                if (inv) {
-                    setInvoice(inv);
-                } else {
-                    alert('Invoice not found');
+                try {
+                    const inv = await getInvoice(id);
+                    if (inv) {
+                        setInvoice(inv);
+                    } else {
+                        alert('Invoice not found');
+                        router.push('/');
+                    }
+                } catch (error) {
+                    console.error('Failed to load invoice:', error);
+                    alert('Failed to load invoice');
                     router.push('/');
                 }
             }

@@ -3,20 +3,38 @@
  * 
  * All data operations must go through this layer.
  * Frontend must never cache backend data as authoritative.
+ * 
+ * Base URL is resolved dynamically from:
+ * 1. Capacitor Preferences (mobile)
+ * 2. localStorage (web fallback)
  */
 
 import { Preferences } from '@capacitor/preferences';
 
-/**
- * Centralized Backend API Client
- * 
- * All data operations must go through this layer.
- * Frontend must never cache backend data as authoritative.
- */
+// Request timeout in milliseconds
+const REQUEST_TIMEOUT_MS = 7000;
 
-const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || null;
-let API_BASE = DEFAULT_API_BASE;
-let isConfigured = !!DEFAULT_API_BASE;
+/**
+ * Normalize a URL to ensure it ends with /api
+ * This prevents endpoint drift from misconfigured env vars or user input
+ */
+const normalizeApiBase = (url) => {
+    if (!url) return null;
+    let cleanUrl = url.trim();
+    // Remove trailing slash
+    if (cleanUrl.endsWith('/')) {
+        cleanUrl = cleanUrl.slice(0, -1);
+    }
+    // Ensure /api suffix
+    if (!cleanUrl.endsWith('/api')) {
+        cleanUrl = `${cleanUrl}/api`;
+    }
+    return cleanUrl;
+};
+
+// API_BASE is NOT initialized at module load - must be set dynamically
+let API_BASE = null;
+let isConfigured = false;
 
 // Connection Listeners
 const connectionListeners = new Set();
@@ -29,36 +47,100 @@ export const onConnectionError = (callback) => {
     return () => connectionListeners.delete(callback);
 };
 
-// Configuration Management
-export const getApiBase = async () => {
-    const { value } = await Preferences.get({ key: 'api_base_url' });
-    if (value) {
-        API_BASE = value;
-        isConfigured = true;
-    } else {
-        API_BASE = DEFAULT_API_BASE;
-        isConfigured = !!DEFAULT_API_BASE;
+/**
+ * Get localStorage value (web fallback)
+ */
+const getLocalStorageApiBase = () => {
+    if (typeof window !== 'undefined') {
+        return localStorage.getItem('api_base_url');
     }
-    return API_BASE;
+    return null;
 };
 
+/**
+ * Set localStorage value (web fallback)
+ */
+const setLocalStorageApiBase = (url) => {
+    if (typeof window !== 'undefined') {
+        if (url) {
+            localStorage.setItem('api_base_url', url);
+        } else {
+            localStorage.removeItem('api_base_url');
+        }
+    }
+};
+
+/**
+ * Initialize API base URL from persistent storage
+ * Must be called before any API requests
+ * @returns {Promise<string|null>} The configured API base URL
+ */
+export const getApiBase = async () => {
+    try {
+        // Try Capacitor Preferences first (mobile)
+        const { value } = await Preferences.get({ key: 'api_base_url' });
+        if (value) {
+            API_BASE = normalizeApiBase(value);
+            isConfigured = true;
+            return API_BASE;
+        }
+    } catch (e) {
+        // Capacitor not available (web), fall through to localStorage
+    }
+
+    // Fallback to localStorage (web)
+    const localValue = getLocalStorageApiBase();
+    if (localValue) {
+        API_BASE = normalizeApiBase(localValue);
+        isConfigured = true;
+        return API_BASE;
+    }
+
+    // No configuration found
+    API_BASE = null;
+    isConfigured = false;
+    return null;
+};
+
+/**
+ * Set API base URL to persistent storage
+ * @param {string} url - The backend URL to set
+ */
 export const setApiBase = async (url) => {
-    // Normalization: trim, remove trailing slash
-    let cleanUrl = url.trim();
-    if (cleanUrl.endsWith('/')) {
-        cleanUrl = cleanUrl.slice(0, -1);
+    // Normalize: trim, ensure /api suffix
+    const cleanUrl = normalizeApiBase(url);
+    if (!cleanUrl) {
+        throw new Error('Invalid URL');
     }
     // Ensure protocol
     if (!/^https?:\/\//i.test(cleanUrl)) {
         throw new Error('Invalid URL protocol');
     }
 
-    await Preferences.set({ key: 'api_base_url', value: cleanUrl });
+    try {
+        // Try Capacitor Preferences first (mobile)
+        await Preferences.set({ key: 'api_base_url', value: cleanUrl });
+    } catch (e) {
+        // Capacitor not available, use localStorage
+    }
+
+    // Also set localStorage as fallback
+    setLocalStorageApiBase(cleanUrl);
+
     API_BASE = cleanUrl;
     isConfigured = true;
 };
 
+/**
+ * Check if backend is configured
+ */
 export const isBackendConfigured = () => isConfigured;
+
+/**
+ * Get the current API base URL (synchronous, for internal use)
+ * Returns null if not configured
+ */
+export const getCurrentApiBase = () => API_BASE;
 
 // Token management
 const getToken = () => {
@@ -80,18 +162,64 @@ export const setToken = (token) => {
 
 export const clearToken = () => setToken(null);
 
-// Generate idempotency keys natively
-const generateRequestId = () => crypto.randomUUID();
+/**
+ * Generate a UUID v4 string.
+ * 
+ * IMPORTANT: Do NOT use crypto.randomUUID() directly in frontend code.
+ * It is not supported in Android WebView / Capacitor environments and will
+ * throw a runtime error, blocking the entire API client.
+ * 
+ * This helper uses crypto.randomUUID() when available (modern browsers),
+ * and falls back to a Math.random-based RFC-4122 v4 generator otherwise.
+ * 
+ * @returns {string} A UUID v4 string (e.g., "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx")
+ */
+const generateUUID = () => {
+    // Use native crypto.randomUUID if available (not in Android WebView)
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        try {
+            return crypto.randomUUID();
+        } catch (e) {
+            // Fall through to fallback
+        }
+    }
+
+    // Fallback: Math.random-based RFC-4122 v4 UUID generator
+    // Works in all environments including Android WebView / Capacitor
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+};
+
+// Alias for semantic clarity in API calls
+const generateRequestId = generateUUID;
 
 /**
- * Core request function with error handling
+ * Custom API Error class
+ */
+export class ApiError extends Error {
+    constructor(message, status, details, requestId) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+        this.details = details;
+        this.requestId = requestId;
+    }
+}
+
+/**
+ * Core request function with error handling and timeout
  */
 async function request(method, endpoint, data = null, options = {}) {
-    // Ensure we have the latest config if not yet loaded (though AuthWrapper should handle this)
-    // For safety, we rely on API_BASE variable being set by initApi or getApiBase
-
+    // Ensure API_BASE is configured
     if (!API_BASE) {
-        throw new Error('Backend URL not configured');
+        // Try to load it dynamically
+        await getApiBase();
+        if (!API_BASE) {
+            throw new ApiError('Backend URL not configured. Please configure the server connection.', 0, null);
+        }
     }
 
     const url = `${API_BASE}${endpoint}`;
@@ -120,11 +248,16 @@ async function request(method, endpoint, data = null, options = {}) {
         config.body = JSON.stringify(data);
     }
 
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    config.signal = controller.signal;
+
     try {
         const response = await fetch(url, config);
+        clearTimeout(timeoutId);
 
         // Handle 401 Unauthorized - clear token and throw error
-        // AuthWrapper will automatically show the login flow when user is not authenticated
         if (response.status === 401) {
             clearToken();
             throw new ApiError('Unauthorized', 401, null);
@@ -148,35 +281,32 @@ async function request(method, endpoint, data = null, options = {}) {
 
         return await response.json();
     } catch (error) {
+        clearTimeout(timeoutId);
+
         if (error instanceof ApiError) {
             throw error;
         }
 
-        // Notify connection loss on network errors
-        // Distinguish between network error and other errors?
-        // fetch throws TypeError on network failure
+        // Handle timeout (AbortError)
+        if (error.name === 'AbortError') {
+            console.error('API Request Timeout:', url);
+            notifyConnectionLost();
+            throw new ApiError(
+                'Request timed out - server may be unreachable',
+                0,
+                null
+            );
+        }
+
+        // Network error or other fetch error
         console.error('API Request Failed:', error);
         notifyConnectionLost();
 
-        // Network error or other fetch error
         throw new ApiError(
             error.message || 'Network error - backend may be unavailable',
             0,
             null
         );
-    }
-}
-
-/**
- * Custom API Error class
- */
-export class ApiError extends Error {
-    constructor(message, status, details, requestId) {
-        super(message);
-        this.name = 'ApiError';
-        this.status = status;
-        this.details = details;
-        this.requestId = requestId;
     }
 }
 
@@ -188,6 +318,7 @@ export const api = {
     init: getApiBase,
     setApiBase,
     onConnectionError,
+    getCurrentApiBase,
 
     // Raw request methods
     get: (endpoint) => request('GET', endpoint),
@@ -196,10 +327,35 @@ export const api = {
     patch: (endpoint, data, options) => request('PATCH', endpoint, data, options),
     delete: (endpoint) => request('DELETE', endpoint),
 
-    // Health check - checks CURRENT base URL
-    health: () => fetch(`${API_BASE.replace('/api', '')}/health`).then(r => r.ok),
+    // Health check - checks CURRENT base URL with timeout
+    health: async () => {
+        if (!API_BASE) {
+            await getApiBase();
+            if (!API_BASE) {
+                return false;
+            }
+        }
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+        try {
+            const response = await fetch(`${API_BASE.replace('/api', '')}/health`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            return response.ok;
+        } catch (e) {
+            clearTimeout(timeoutId);
+            return false;
+        }
+    },
 
-    // Authentication
+    // Setup APIs (no auth required - for initial shop bootstrap)
+    setup: {
+        status: () => api.get('/setup/status'),
+        bootstrap: (data) => api.post('/setup/bootstrap', data),
+    },
+
+    // Authentication & User Management
     auth: {
         requestOTP: (phone) => api.post('/auth/request-otp', { phone }),
         login: (credentials) => api.post('/auth/login', credentials),
@@ -208,6 +364,9 @@ export const api = {
             clearToken();
             return Promise.resolve();
         },
+        // User management (ADMIN only)
+        listUsers: () => api.get('/auth/users'),
+        createUser: (data) => api.post('/auth/users', data),
     },
 
     // Invoices
@@ -218,16 +377,36 @@ export const api = {
         update: (id, data) => api.put(`/invoices/${id}`, data),
         delete: (id) => api.delete(`/invoices/${id}`),
         uploadPhoto: async (id, file) => {
+            if (!API_BASE) {
+                await getApiBase();
+                if (!API_BASE) {
+                    throw new ApiError('Backend URL not configured', 0, null);
+                }
+            }
             const formData = new FormData();
             formData.append('photo', file);
             const token = getToken();
-            const response = await fetch(`${API_BASE}/invoices/${id}/photos`, {
-                method: 'POST',
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                body: formData,
-            });
-            if (!response.ok) throw new ApiError('Failed to upload photo', response.status);
-            return response.json();
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS * 3); // Longer timeout for uploads
+
+            try {
+                const response = await fetch(`${API_BASE}/invoices/${id}/photos`, {
+                    method: 'POST',
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                    body: formData,
+                    signal: controller.signal,
+                });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new ApiError('Failed to upload photo', response.status);
+                return response.json();
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new ApiError('Upload timed out', 0, null);
+                }
+                throw error;
+            }
         },
     },
 
@@ -269,23 +448,43 @@ export const api = {
              * @returns {Promise<{id: string, url: string, createdAt: string}>}
              */
             upload: async (productId, file) => {
+                if (!API_BASE) {
+                    await getApiBase();
+                    if (!API_BASE) {
+                        throw new ApiError('Backend URL not configured', 0, null);
+                    }
+                }
                 const formData = new FormData();
                 formData.append('image', file); // Field name MUST be 'image' per API spec
                 const token = getToken();
-                const response = await fetch(`${API_BASE}/products/${productId}/images`, {
-                    method: 'POST',
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                    body: formData,
-                });
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new ApiError(
-                        errorData.error || 'Failed to upload image',
-                        response.status,
-                        errorData.details
-                    );
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS * 3); // Longer timeout for uploads
+
+                try {
+                    const response = await fetch(`${API_BASE}/products/${productId}/images`, {
+                        method: 'POST',
+                        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                        body: formData,
+                        signal: controller.signal,
+                    });
+                    clearTimeout(timeoutId);
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new ApiError(
+                            errorData.error || 'Failed to upload image',
+                            response.status,
+                            errorData.details
+                        );
+                    }
+                    return response.json();
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    if (error.name === 'AbortError') {
+                        throw new ApiError('Upload timed out', 0, null);
+                    }
+                    throw error;
                 }
-                return response.json();
             },
 
             /**
@@ -312,6 +511,7 @@ export const api = {
     // Payments
     payments: {
         list: () => api.get('/payments'),
+        listByParty: (partyId) => api.get(`/payments?partyId=${partyId}`),
         get: (id) => api.get(`/payments/${id}`),
         create: (data) => api.post('/payments', data),
         delete: (id) => api.delete(`/payments/${id}`),

@@ -3,7 +3,7 @@ import BottomNav from "@/components/BottomNav";
 import BackButtonHandler from "@/components/BackButtonHandler";
 import { ToastProvider } from "@/components/Toast";
 
-import AuthWrapper from '@/components/Auth/AuthWrapper';
+import AppBootstrap from '@/components/AppBootstrap/AppBootstrap';
 
 export const metadata = {
   title: 'Swipe Invoice',
@@ -15,7 +15,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <AuthWrapper>
+        <AppBootstrap>
           <ToastProvider>
             <BackButtonHandler />
             <div className="main-content">
@@ -23,9 +23,10 @@ export default function RootLayout({ children }) {
             </div>
             <BottomNav />
           </ToastProvider>
-        </AuthWrapper>
+        </AppBootstrap>
       </body>
     </html>
   );
 }
+
 

@@ -6,20 +6,39 @@ import styles from './LoginFlow.module.css';
 import LandingPage from '../LandingPage/LandingPage';
 
 export default function LoginFlow() {
-    const { currentStep, setStep, phoneNumber, requestOTP, verifyOTP, isLoading } = useAuthStore();
+    const {
+        currentStep,
+        setStep,
+        phoneNumber,
+        requestOTP,
+        verifyOTP,
+        isLoading,
+        isNotAssignedToShop,
+        error: storeError
+    } = useAuthStore();
     const [phone, setPhone] = useState(phoneNumber || '');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [error, setError] = useState('');
 
     const handlePhoneSubmit = async () => {
-        if (phone.length === 10) {
-            setError('');
-            const success = await requestOTP(phone);
-            if (!success) {
-                setError('Failed to send OTP. Please try again.');
-            }
-        } else {
+        console.log('[LoginFlow] handlePhoneSubmit clicked');
+        console.log('[LoginFlow] raw phone:', phone);
+
+        const normalizedPhone = phone.replace(/\D/g, '');
+        console.log('[LoginFlow] normalized phone:', normalizedPhone);
+
+        if (normalizedPhone.length !== 10) {
+            console.log('[LoginFlow] validation failed');
             setError('Please enter a valid 10-digit phone number');
+            return;
+        }
+
+        setError('');
+        console.log('[LoginFlow] calling requestOTP');
+        const success = await requestOTP(normalizedPhone);
+        console.log('[LoginFlow] requestOTP returned:', success);
+        if (!success) {
+            setError('Failed to send OTP. Please try again.');
         }
     };
 
@@ -45,6 +64,8 @@ export default function LoginFlow() {
     if (currentStep === 'welcome') {
         return <LandingPage onGetStarted={() => setStep('phone')} />;
     }
+
+    console.log('[LoginFlow] render - isLoading:', isLoading, 'currentStep:', currentStep);
 
     if (currentStep === 'phone') {
         return (
@@ -97,6 +118,30 @@ export default function LoginFlow() {
                     </button>
                     <button className={styles.backButton} onClick={() => setStep('phone')}>
                         Change Number
+                    </button>
+                </div>
+            </div>
+        );
+    }
+    // Blocking message for users not assigned to any shop
+    if (currentStep === 'notAssigned' || isNotAssignedToShop) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.card}>
+                    <h2 className={styles.title}>Access Denied</h2>
+                    <p className={styles.subtitle}>
+                        You are not added to any shop.<br />
+                        Please contact your administrator.
+                    </p>
+                    <div className={styles.error}>
+                        {storeError || 'Your phone number is not registered with any shop.'}
+                    </div>
+                    <button
+                        className={styles.backButton}
+                        onClick={() => setStep('phone')}
+                        style={{ marginTop: '16px' }}
+                    >
+                        Try Another Number
                     </button>
                 </div>
             </div>

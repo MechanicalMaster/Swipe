@@ -1,13 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '@/api/backendClient';
 import styles from './ServerSetup.module.css';
 
-export default function ServerSetup({ onConfigured }) {
-    const [url, setUrl] = useState('');
-    const [status, setStatus] = useState('idle'); // idle, testing, success, error
-    const [message, setMessage] = useState('');
+export default function ServerSetup({ onConfigured, initialUrl = '', initialError = '' }) {
+    const [url, setUrl] = useState(initialUrl);
+    const [status, setStatus] = useState(initialError ? 'error' : 'idle'); // idle, testing, success, error
+    const [message, setMessage] = useState(initialError);
+
+    // Update state if props change
+    useEffect(() => {
+        if (initialUrl) setUrl(initialUrl);
+        if (initialError) {
+            setStatus('error');
+            setMessage(initialError);
+        }
+    }, [initialUrl, initialError]);
 
     const handleTestAndSave = async () => {
         if (!url) {

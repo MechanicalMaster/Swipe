@@ -135,7 +135,7 @@ export const usePartyStore = create((set, get) => ({
         const payment = await api.payments.create({
             type: paymentData.mode === 'in' ? 'IN' : 'OUT',
             partyType: 'CUSTOMER',
-            partyId: paymentData.customerId,
+            partyId: String(paymentData.customerId),
             amount: paymentData.amount,
             date: paymentData.date,
             mode: paymentData.type || 'CASH',
@@ -155,7 +155,7 @@ export const usePartyStore = create((set, get) => ({
         const payment = await api.payments.create({
             type: paymentData.mode === 'out' ? 'OUT' : 'IN',
             partyType: 'VENDOR',
-            partyId: paymentData.vendorId,
+            partyId: String(paymentData.vendorId),
             amount: paymentData.amount,
             date: paymentData.date,
             mode: paymentData.type || 'CASH',

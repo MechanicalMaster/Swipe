@@ -6,8 +6,9 @@ export const useAuthStore = create((set, get) => ({
     isLoading: true,
     user: null,
     phoneNumber: '',
-    currentStep: 'welcome', // welcome, phone, otp
+    currentStep: 'welcome', // welcome, phone, otp, notAssigned
     error: null,
+    isNotAssignedToShop: false, // True when user exists but not assigned to any shop
 
     // Check if user is authenticated by validating token with backend
     loadAuth: async () => {
@@ -31,18 +32,22 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    setStep: (step) => set({ currentStep: step }),
+    setStep: (step) => set({ currentStep: step, isNotAssignedToShop: false, error: null }),
 
     setPhoneNumber: (phone) => set({ phoneNumber: phone }),
 
     // Request OTP from backend
     requestOTP: async (phone) => {
+        console.log('[authStore] requestOTP called with:', phone);
         set({ isLoading: true, error: null });
         try {
+            console.log('[authStore] calling api.auth.requestOTP');
             await api.auth.requestOTP(phone);
+            console.log('[authStore] api.auth.requestOTP succeeded');
             set({ phoneNumber: phone, currentStep: 'otp', isLoading: false });
             return true;
         } catch (error) {
+            console.log('[authStore] api.auth.requestOTP failed:', error.message);
             set({ error: error.message || 'Failed to send OTP', isLoading: false });
             return false;
         }
@@ -70,10 +75,26 @@ export const useAuthStore = create((set, get) => ({
             });
             return true;
         } catch (error) {
-            set({
-                error: error.message || 'Invalid OTP',
-                isLoading: false
-            });
+            // Check if this is a "user not registered" error (403)
+            const isNotAssigned = error.status === 403 &&
+                (error.message?.toLowerCase().includes('not registered') ||
+                    error.message?.toLowerCase().includes('not assigned') ||
+                    error.message?.toLowerCase().includes('contact your shop admin'));
+
+            if (isNotAssigned) {
+                set({
+                    error: 'You are not added to any shop. Please contact your administrator.',
+                    isNotAssignedToShop: true,
+                    currentStep: 'notAssigned',
+                    isLoading: false
+                });
+            } else {
+                set({
+                    error: error.message || 'Invalid OTP',
+                    isNotAssignedToShop: false,
+                    isLoading: false
+                });
+            }
             return false;
         }
     },
@@ -90,7 +111,8 @@ export const useAuthStore = create((set, get) => ({
             user: null,
             phoneNumber: '',
             currentStep: 'welcome',
-            error: null
+            error: null,
+            isNotAssignedToShop: false
         });
     },
 

@@ -56,9 +56,18 @@ export const usePaymentStore = create((set, get) => ({
     getPaymentsByParty: async (partyId) => {
         try {
             // Filter payments by party from loaded list
-            // Or implement backend filter if available
             const allPayments = get().payments;
-            return allPayments.filter(p => p.partyId === partyId);
+            console.log('[paymentStore] getPaymentsByParty called with:', partyId);
+            console.log('[paymentStore] All payments:', allPayments.length, allPayments.map(p => ({ id: p.id, partyId: p.partyId, party_id: p.party_id })));
+
+            // Flexible comparison to handle both camelCase and snake_case
+            const filtered = allPayments.filter(p => {
+                const paymentPartyId = p.partyId || p.party_id;
+                return String(paymentPartyId) === String(partyId);
+            });
+
+            console.log('[paymentStore] Filtered payments:', filtered.length);
+            return filtered;
         } catch (error) {
             logger.error(LOG_EVENTS.STORE_LOAD_ERROR, { store: 'payments_by_party', partyId, error: error.message });
             return [];

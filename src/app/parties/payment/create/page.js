@@ -43,7 +43,7 @@ function RecordPaymentContent() {
 
         if (isVendor) {
             const paymentData = {
-                vendorId: parseInt(vendorId),
+                vendorId: vendorId,  // UUID from backend, don't parseInt
                 amount: parseFloat(amount),
                 date,
                 type: paymentType,
@@ -57,7 +57,7 @@ function RecordPaymentContent() {
             await addVendorPayment(paymentData);
         } else {
             const paymentData = {
-                customerId: parseInt(customerId),
+                customerId: customerId,  // UUID from backend, don't parseInt
                 amount: parseFloat(amount),
                 date,
                 type: paymentType,

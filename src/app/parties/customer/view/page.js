@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePartyStore } from '@/lib/store/partyStore';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
-import { usePaymentStore } from '@/lib/store/paymentStore';
+import { api } from '@/api/backendClient';
 import { shareText, downloadCSV, downloadPDFBlob } from '@/lib/utils/invoiceActions';
 import { FiArrowLeft, FiPhone, FiMail, FiShare2, FiMessageCircle, FiEdit2, FiMoreHorizontal, FiFileText, FiFile, FiPlusSquare, FiGitMerge, FiTrash2 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,7 +18,6 @@ function CustomerLedgerContent() {
     const id = searchParams.get('id');
     const { getCustomer, deleteCustomer } = usePartyStore();
     const { invoices, loadInvoices } = useInvoiceStore();
-    const { payments, loadPayments, getPaymentsByParty } = usePaymentStore();
 
     const [customer, setCustomer] = useState(null);
     const [transactions, setTransactions] = useState([]);
@@ -164,6 +163,8 @@ function CustomerLedgerContent() {
     useEffect(() => {
         const loadData = async () => {
             if (customer) {
+                console.log('[CustomerView] loadData called, customer.id:', customer.id);
+
                 // Get Invoices and Legacy Payments from 'invoices' table
                 const allInvoiceRecords = invoices.filter(inv =>
                     inv.customerId === customer.id || inv.customer?.id === customer.id
@@ -172,8 +173,14 @@ function CustomerLedgerContent() {
                 const realInvoices = allInvoiceRecords.filter(inv => !inv.type || inv.type === 'invoice');
                 const legacyPayments = allInvoiceRecords.filter(inv => inv.type === 'payment_in' || inv.type === 'payment_out');
 
-                // Get New Payments from backend via paymentStore
-                const newPayments = await getPaymentsByParty(customer.id);
+                // Get New Payments directly from backend API
+                let newPayments = [];
+                try {
+                    newPayments = await api.payments.listByParty(customer.id);
+                    console.log('[CustomerView] Payments from API:', newPayments);
+                } catch (err) {
+                    console.error('[CustomerView] Failed to fetch payments:', err);
+                }
 
                 const invoiceTxs = realInvoices.map(inv => ({
                     id: `inv-${inv.id}`,
@@ -209,6 +216,7 @@ function CustomerLedgerContent() {
                 }));
 
                 const allTxs = [...invoiceTxs, ...legacyPaymentTxs, ...newPaymentTxs];
+                console.log('[CustomerView] allTxs total:', allTxs.length);
 
                 // Sort by date descending
                 allTxs.sort((a, b) => new Date(b.date) - new Date(a.date));

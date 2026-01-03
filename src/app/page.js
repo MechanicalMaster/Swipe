@@ -1,11 +1,79 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { FiBell, FiChevronRight, FiCheck, FiArrowUp, FiArrowDown } from 'react-icons/fi';
+import { FiBell, FiChevronRight, FiCheck, FiArrowUp, FiArrowDown, FiAlertCircle } from 'react-icons/fi';
 import { FaReceipt, FaShoppingBag, FaWallet, FaFileAlt, FaStar } from 'react-icons/fa';
+import { useHomeStore } from '@/lib/store/homeStore';
 import styles from './page.module.css';
 
+// Action configuration - deterministic mapping
+const ACTION_CONFIG = {
+  INVOICE: {
+    label: 'Create Invoice',
+    route: '/invoice/create',
+    icon: FaReceipt
+  },
+  PURCHASE: {
+    label: 'Purchase',
+    route: '/bills/purchase/create',
+    icon: FaShoppingBag
+  },
+  EXPENSE: {
+    label: 'Expense',
+    route: '/more/bills/expenses/create',
+    icon: FaWallet
+  }
+};
+
+// Format currency to Indian Rupees
+const formatCurrency = (amount) => {
+  if (amount == null || isNaN(amount)) return '₹0';
+  return `₹${amount.toLocaleString('en-IN')}`;
+};
+
+// Format relative time from date string
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return '';
+
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+  if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffMinutes > 0) return `${diffMinutes} min${diffMinutes > 1 ? 's' : ''} ago`;
+  return 'just now';
+};
+
+// Get activity icon based on type
+const getActivityIcon = (type) => {
+  switch (type) {
+    case 'INVOICE':
+      return <FaReceipt size={20} color="#6B7280" />;
+    case 'PAYMENT':
+      return <FiCheck size={20} color="#6B7280" />;
+    default:
+      return <FiAlertCircle size={20} color="#6B7280" />;
+  }
+};
+
 export default function Home() {
+  const { snapshot, loading, error, fetchSnapshot } = useHomeStore();
+
+  // Fetch snapshot on mount
+  useEffect(() => {
+    fetchSnapshot();
+  }, [fetchSnapshot]);
+
+  // Get primary action config with fallback to INVOICE
+  const mostUsed = snapshot?.primaryAction?.mostUsed || 'INVOICE';
+  const primaryAction = ACTION_CONFIG[mostUsed] || ACTION_CONFIG.INVOICE;
+  const PrimaryIcon = primaryAction.icon;
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -24,44 +92,112 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Error State */}
+      {error && (
+        <div style={{
+          background: '#FEF2F2',
+          border: '1px solid #FECACA',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <FiAlertCircle size={20} color="#DC2626" />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: '#DC2626', marginBottom: '4px' }}>
+              {error}
+            </div>
+            <button
+              onClick={fetchSnapshot}
+              style={{
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#DC2626',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Business Pulse Card */}
       <section className={styles.pulseCard}>
         <div className={styles.pulseDecoration}></div>
         <div className={styles.pulseContent}>
           <div className={styles.pulseLabel}>Business Pulse</div>
-          <div className={styles.pulseAmount}>₹42,300</div>
-          <div className={styles.pulseStats}>
-            <span className={styles.pulseSubtext}>received this week</span>
-            <span className={styles.pulseBadge}>
-              <FiArrowUp size={10} /> 12%
-            </span>
-          </div>
-          <div className={styles.pulseNote}>
-            5 payments completed - Great job! 🎉
-          </div>
-        </div>
-        <div className={styles.pulseChart}>
-          <div className={styles.chartBar} style={{ height: '30%', background: '#E5E7EB' }}></div>
-          <div className={styles.chartBar} style={{ height: '45%', background: '#BBF7D0' }}></div>
-          <div className={styles.chartBar} style={{ height: '35%', background: '#86EFAC' }}></div>
-          <div className={styles.chartBar} style={{ height: '60%', background: '#4ADE80' }}></div>
-          <div className={styles.chartBar} style={{ height: '50%', background: '#22C55E' }}></div>
-          <div className={styles.chartBar} style={{ height: '85%', background: '#F5C242' }}></div>
+
+          {loading ? (
+            // Skeleton loading
+            <>
+              <div style={{
+                height: '38px',
+                width: '60%',
+                background: '#E5E7EB',
+                borderRadius: '8px',
+                marginBottom: '8px'
+              }} />
+              <div style={{
+                height: '20px',
+                width: '40%',
+                background: '#E5E7EB',
+                borderRadius: '6px'
+              }} />
+            </>
+          ) : snapshot?.businessPulse ? (
+            <>
+              <div className={styles.pulseAmount}>
+                {formatCurrency(snapshot.businessPulse.amountReceivedThisWeek)}
+              </div>
+              <div className={styles.pulseStats}>
+                <span className={styles.pulseSubtext}>received this week</span>
+                {snapshot.businessPulse.percentChangeWoW !== 0 && (
+                  <span className={styles.pulseBadge}>
+                    {snapshot.businessPulse.percentChangeWoW > 0 ? (
+                      <FiArrowUp size={10} />
+                    ) : (
+                      <FiArrowDown size={10} />
+                    )}
+                    {Math.abs(snapshot.businessPulse.percentChangeWoW)}%
+                  </span>
+                )}
+              </div>
+              {snapshot.businessPulse.paymentsCompleted > 0 && (
+                <div className={styles.pulseNote}>
+                  {snapshot.businessPulse.paymentsCompleted} payment{snapshot.businessPulse.paymentsCompleted > 1 ? 's' : ''} completed - Great job! 🎉
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className={styles.pulseAmount}>₹0</div>
+              <div className={styles.pulseStats}>
+                <span className={styles.pulseSubtext}>received this week</span>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
       {/* Quick Actions Section */}
       <section className={styles.actionsSection}>
-        {/* Primary Action - Create Invoice */}
-        <Link href="/invoice/create" className={styles.primaryActionCard}>
+        {/* Primary Action - Most Used */}
+        <Link href={primaryAction.route} className={styles.primaryActionCard}>
           <div className={styles.primaryIconBox}>
-            <FaReceipt size={22} />
+            <PrimaryIcon size={22} />
             <div className={styles.starBadge}>
               <FaStar size={8} color="white" />
             </div>
           </div>
           <div className={styles.primaryActionInfo}>
-            <div className={styles.primaryActionTitle}>Create Invoice</div>
+            <div className={styles.primaryActionTitle}>{primaryAction.label}</div>
             <div className={styles.primaryActionSubtitle}>Most used</div>
           </div>
           <FiChevronRight className={styles.actionChevron} size={24} />
@@ -85,65 +221,85 @@ export default function Home() {
       </section>
 
       {/* Recent Activity Section */}
-      <section className={styles.activitySection}>
-        <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>Recent Activity</h3>
-          <Link href="/invoice" className={styles.seeAllLink}>
-            See All <FiChevronRight size={16} />
-          </Link>
-        </div>
-
-        <div className={styles.activityList}>
-          {/* Activity Item 1 - Follow up payment */}
-          <div className={styles.activityCard}>
-            <div className={styles.activityAvatar}>
-              <img src="https://images.unsplash.com/photo-1560343090-f0409e92791a?w=100&h=100&fit=crop" alt="Shop" />
-              <div className={`${styles.avatarBadge} ${styles.success}`}>
-                <FiArrowDown size={10} color="white" />
-              </div>
-            </div>
-            <div className={styles.activityInfo}>
-              <div className={styles.activityTitle}>Follow up payment</div>
-              <div className={styles.activitySubtitle}>Ramesh Jewellers · ₹7,200</div>
-            </div>
-            <div className={styles.activityRight}>
-              <div className={styles.activityAmount}>₹7,200</div>
-              <div className={`${styles.activityStatus} ${styles.overdue}`}>5 days overdue</div>
-            </div>
+      {(!loading && snapshot?.recentActivity && snapshot.recentActivity.length > 0) && (
+        <section className={styles.activitySection}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Recent Activity</h3>
+            <Link href="/invoice" className={styles.seeAllLink}>
+              See All <FiChevronRight size={16} />
+            </Link>
           </div>
 
-          {/* Activity Item 2 - Last Invoice */}
-          <div className={styles.activityCard}>
-            <div className={styles.activityAvatar}>
-              <FaReceipt size={20} color="#6B7280" />
-              <div className={`${styles.avatarBadge} ${styles.warning}`}>
-                <FiCheck size={10} color="white" />
-              </div>
-            </div>
-            <div className={styles.activityInfo}>
-              <div className={styles.activityTitle}>Last Invoice: INV-042</div>
-              <div className={styles.activitySubtitle}>₹15,600 · Paid! 😊 · 15 mins ago</div>
-            </div>
-            <div className={styles.activityRight}>
-              <div className={styles.activityAmount}>₹15,600 <span style={{ fontWeight: 400, fontSize: 11, color: '#22C55E' }}>Paid!</span></div>
-              <div className={`${styles.activityStatus} ${styles.paid}`}>15 mins ago</div>
-            </div>
-          </div>
+          <div className={styles.activityList}>
+            {snapshot.recentActivity.map((activity, index) => {
+              // Determine card rendering based on status
+              const isOverdue = activity.status === 'OVERDUE';
+              const isPaid = activity.status === 'PAID';
+              const isRisk = activity.type === 'RISK_SUMMARY';
 
-          {/* Activity Item 3 - Unpaid invoices */}
-          <div className={styles.activityCard}>
-            <div className={styles.unpaidCount}>3</div>
-            <div className={styles.activityInfo}>
-              <div className={styles.activityTitle}>3 invoices unpaid</div>
-              <div className={styles.activitySubtitle}>₹18,900 at risk</div>
-            </div>
-            <div className={styles.activityRight}>
-              <div className={styles.activityAmount}>₹18,900</div>
-              <div className={`${styles.activityStatus} ${styles.risk}`}>A risk</div>
-            </div>
+              return (
+                <div key={index} className={styles.activityCard}>
+                  {isRisk ? (
+                    // Risk summary card
+                    <>
+                      <div className={styles.unpaidCount}>
+                        {snapshot.riskSummary?.unpaidInvoicesCount || 0}
+                      </div>
+                      <div className={styles.activityInfo}>
+                        <div className={styles.activityTitle}>{activity.title}</div>
+                        <div className={styles.activitySubtitle}>{activity.subtitle}</div>
+                      </div>
+                      <div className={styles.activityRight}>
+                        <div className={styles.activityAmount}>
+                          {formatCurrency(activity.amount)}
+                        </div>
+                        <div className={`${styles.activityStatus} ${styles.risk}`}>
+                          {activity.status || 'At risk'}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    // Regular activity card
+                    <>
+                      <div className={styles.activityAvatar}>
+                        {getActivityIcon(activity.type)}
+                        {(isOverdue || isPaid) && (
+                          <div className={`${styles.avatarBadge} ${isPaid ? styles.success : styles.warning}`}>
+                            {isPaid ? (
+                              <FiCheck size={10} color="white" />
+                            ) : (
+                              <FiArrowDown size={10} color="white" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles.activityInfo}>
+                        <div className={styles.activityTitle}>{activity.title}</div>
+                        <div className={styles.activitySubtitle}>
+                          {activity.subtitle}
+                        </div>
+                      </div>
+                      <div className={styles.activityRight}>
+                        <div className={styles.activityAmount}>
+                          {formatCurrency(activity.amount)}
+                          {isPaid && (
+                            <span style={{ fontWeight: 400, fontSize: 11, color: '#22C55E', marginLeft: 4 }}>
+                              Paid!
+                            </span>
+                          )}
+                        </div>
+                        <div className={`${styles.activityStatus} ${isOverdue ? styles.overdue : isPaid ? styles.paid : styles.risk}`}>
+                          {activity.date ? formatRelativeTime(activity.date) : activity.status}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Floating Action Button */}
       <Link href="/invoice/create" className={styles.fab}>

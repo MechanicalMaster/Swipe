@@ -586,6 +586,33 @@ export const api = {
     auditLogs: {
         create: (data) => api.post('/audit-logs', data),
     },
+
+    // Operations (Backup)
+    ops: {
+        /**
+         * Create a new backup of the database and file storage
+         * @returns {Promise<{success: boolean, filename: string, sizeBytes: number, createdAt: string}>}
+         * @throws {ApiError} 409 if backup already in progress
+         */
+        createBackup: () => api.post('/ops/backup'),
+
+        /**
+         * Get download URL for a backup file
+         * @param {string} filename - Backup filename from createBackup response
+         * @returns {string} Full URL for downloading the backup
+         */
+        downloadBackup: (filename) => {
+            if (!API_BASE) {
+                throw new Error('Backend URL not configured');
+            }
+            return `${API_BASE}/ops/backup/${filename}`;
+        },
+    },
+
+    // Home snapshot
+    home: {
+        snapshot: () => api.get('/home/snapshot'),
+    },
 };
 
 export default api;

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
 import { useMasterStore } from '@/lib/store/masterStore';
 import { api } from '@/api/backendClient';
-import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp, FiLock, FiUnlock, FiX, FiLoader, FiTrash2 } from 'react-icons/fi';
+import AuthenticatedImage from '@/components/AuthenticatedImage';
+import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp, FiLock, FiUnlock, FiX, FiLoader, FiTrash2, FiShoppingBag } from 'react-icons/fi';
 import styles from '../page.module.css'; // Reuse styles
 
 export default function EditProductPage() {
@@ -752,13 +753,22 @@ export default function EditProductPage() {
                     {/* Existing images from server */}
                     {existingImages.map((img) => (
                         <div key={img.id} style={{ position: 'relative', flexShrink: 0 }}>
-                            <img
-                                src={api.photos.getFullUrl(img.url)}
+                            <AuthenticatedImage
+                                src={img.url}
                                 alt=""
                                 style={{
                                     width: 80, height: 80, borderRadius: 8, objectFit: 'cover',
                                     opacity: deletingImages.has(img.id) ? 0.5 : 1
                                 }}
+                                fallback={
+                                    <div style={{
+                                        width: 80, height: 80, borderRadius: 8,
+                                        background: '#f3f4f6', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center'
+                                    }}>
+                                        <FiShoppingBag size={24} color="#ccc" />
+                                    </div>
+                                }
                             />
                             <button
                                 onClick={() => handleDeleteExistingImage(img.id)}

@@ -19,9 +19,15 @@ export default function PartiesPage() {
 
     const currentList = activeTab === 'customers' ? customers : vendors;
 
-    // Calculate totals
-    const totalCollect = customers.reduce((acc, c) => acc + (c.balance > 0 ? c.balance : 0), 0);
-    const totalPay = customers.reduce((acc, c) => acc + (c.balance < 0 ? Math.abs(c.balance) : 0), 0);
+    // Calculate totals (ensure balance is a number)
+    const totalCollect = customers.reduce((acc, c) => {
+        const balance = Number(c.balance) || 0;
+        return acc + (balance > 0 ? balance : 0);
+    }, 0);
+    const totalPay = customers.reduce((acc, c) => {
+        const balance = Number(c.balance) || 0;
+        return acc + (balance < 0 ? Math.abs(balance) : 0);
+    }, 0);
 
     return (
         <div className={styles.container}>

@@ -607,6 +607,53 @@ export const api = {
             }
             return `${API_BASE}/ops/backup/${filename}`;
         },
+
+        /**
+         * Restore database and files from a backup ZIP
+         * @param {File} file - ZIP file to restore from
+         * @returns {Promise<{success: boolean, restartRequired: boolean, photosRestored: number, emergencyBackupPath: string, restoredAt: string}>}
+         * @throws {ApiError} 403 if not admin, 409 if restore in progress, 415 if not ZIP
+         */
+        restoreBackup: async (file) => {
+            if (!API_BASE) {
+                await getApiBase();
+                if (!API_BASE) {
+                    throw new ApiError('Backend URL not configured', 0, null);
+                }
+            }
+            const formData = new FormData();
+            formData.append('backup', file);
+            const token = getToken();
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout for large files
+
+            try {
+                const response = await fetch(`${API_BASE}/ops/restore`, {
+                    method: 'POST',
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                    body: formData,
+                    signal: controller.signal,
+                });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new ApiError(
+                        errorData.error || 'Restore failed',
+                        response.status,
+                        errorData.details
+                    );
+                }
+                return response.json();
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new ApiError('Restore timed out', 0, null);
+                }
+                throw error;
+            }
+        },
     },
 
     // Home snapshot

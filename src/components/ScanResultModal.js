@@ -1,6 +1,7 @@
 'use client';
 
 import { FiShoppingBag, FiX, FiRefreshCw, FiPlus } from 'react-icons/fi';
+import AuthenticatedImage from '@/components/AuthenticatedImage';
 import styles from './ScanResultModal.module.css';
 
 export default function ScanResultModal({
@@ -16,6 +17,10 @@ export default function ScanResultModal({
 
     const hasProduct = !!product;
 
+    // Get image URL - prefer API URL, fallback to base64 data
+    const imageUrl = product?.images?.[0]?.url;
+    const imageData = product?.images?.[0]?.data;
+
     return (
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -28,8 +33,19 @@ export default function ScanResultModal({
                         {/* Product Found */}
                         <div className={styles.productCard}>
                             <div className={styles.imageContainer}>
-                                {product.images && product.images.length > 0 ? (
-                                    <img src={product.images[0].data} alt={product.name} className={styles.image} />
+                                {imageUrl ? (
+                                    <AuthenticatedImage
+                                        src={imageUrl}
+                                        alt={product.name}
+                                        className={styles.image}
+                                        fallback={
+                                            <div className={styles.placeholderImage}>
+                                                <FiShoppingBag size={40} color="#9ca3af" />
+                                            </div>
+                                        }
+                                    />
+                                ) : imageData ? (
+                                    <img src={imageData} alt={product.name} className={styles.image} />
                                 ) : (
                                     <div className={styles.placeholderImage}>
                                         <FiShoppingBag size={40} color="#9ca3af" />

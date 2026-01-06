@@ -3,7 +3,7 @@ import { FiShoppingBag, FiCheck } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api } from '@/api/backendClient';
+import AuthenticatedImage from '@/components/AuthenticatedImage';
 
 export default function ProductCard({ product, onAddToTray, onShare, quantity = 0, isSelectMode = false }) {
     const router = useRouter();
@@ -29,6 +29,10 @@ export default function ProductCard({ product, onAddToTray, onShare, quantity = 
         callback();
     };
 
+    // Get image URL - prefer API URL, fallback to base64 data
+    const imageUrl = product.images?.[0]?.url;
+    const imageData = product.images?.[0]?.data;
+
     return (
         <div className={styles.card} onClick={handleCardClick} style={{ cursor: isSelectMode ? 'default' : 'pointer' }}>
             <div className={styles.imageContainer}>
@@ -46,13 +50,20 @@ export default function ProductCard({ product, onAddToTray, onShare, quantity = 
                     </div>
                 )}
 
-                {/* Image */}
-                {product.images && product.images.length > 0 ? (
-                    <img
-                        src={api.photos.getFullUrl(product.images[0].url) || product.images[0].data}
+                {/* Image - use AuthenticatedImage for API URLs, regular img for base64 */}
+                {imageUrl ? (
+                    <AuthenticatedImage
+                        src={imageUrl}
                         alt={product.name}
                         className={styles.image}
+                        fallback={
+                            <div className={styles.placeholderImage}>
+                                <FiShoppingBag size={32} color="#ccc" />
+                            </div>
+                        }
                     />
+                ) : imageData ? (
+                    <img src={imageData} alt={product.name} className={styles.image} />
                 ) : (
                     <div className={styles.placeholderImage}>
                         <FiShoppingBag size={32} color="#ccc" />

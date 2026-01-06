@@ -501,8 +501,76 @@ Same request/response schema as Customers.
 
 ## Photos
 
-### GET `/api/photos/:id`
+### GET `/api/photos/:id` *(Auth Required)*
+
 Serve image file directly. Use photo ID from invoice/product responses.
+
+**Security:**
+- Requires authentication (`Authorization: Bearer <token>`)
+- Shop-scoped: Only returns photos belonging to your shop
+- Returns 401 if no token, 404 if photo not found or belongs to another shop
+
+**Response:**
+- `200 OK`: Binary image data with appropriate `Content-Type` header
+- `401 Unauthorized`: Missing or invalid token
+- `404 Not Found`: Photo doesn't exist or belongs to another shop
+
+> ⚠️ **IMPORTANT:** Browser `<img src="...">` tags do NOT send `Authorization` headers automatically. You must load images programmatically with the auth header.
+
+**Frontend Integration (JavaScript/Web):**
+```javascript
+// Load authenticated image and convert to displayable URL
+async function loadAuthenticatedImage(photoId) {
+  const response = await fetch(`/api/photos/${photoId}`, {
+    headers: {
+      'Authorization': `Bearer ${getToken()}`
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to load image: ${response.status}`);
+  }
+  
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
+// Usage
+const imageUrl = await loadAuthenticatedImage('photo-uuid');
+document.getElementById('my-image').src = imageUrl;
+
+// Remember to revoke when done to prevent memory leaks
+URL.revokeObjectURL(imageUrl);
+```
+
+**Frontend Integration (Swift/iOS):**
+```swift
+func loadAuthenticatedImage(photoId: String, token: String) async throws -> UIImage {
+    var request = URLRequest(url: URL(string: "\(baseURL)/api/photos/\(photoId)")!)
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    
+    let (data, response) = try await URLSession.shared.data(for: request)
+    
+    guard let httpResponse = response as? HTTPURLResponse,
+          httpResponse.statusCode == 200,
+          let image = UIImage(data: data) else {
+        throw ImageError.loadFailed
+    }
+    
+    return image
+}
+```
+
+**React Native / Expo:**
+```javascript
+// Use Image component with headers prop
+<Image
+  source={{
+    uri: `/api/photos/${photoId}`,
+    headers: { Authorization: `Bearer ${token}` }
+  }}
+/>
+```
 
 ---
 
@@ -689,16 +757,129 @@ const createBackup = async () => {
   
   const { filename } = await response.json();
   
-  // 2. Trigger download
-  window.location.href = `/api/ops/backup/${filename}`;
+  // 2. Download using fetch (Authorization header required)
+  const downloadResponse = await fetch(`/api/ops/backup/${filename}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  
+  if (!downloadResponse.ok) {
+    throw new Error('Download failed');
+  }
+  
+  // 3. Trigger browser download from blob
+  const blob = await downloadResponse.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 ```
+
+> ⚠️ **IMPORTANT:** Do NOT use `window.location.href` for the download. Browser navigation does not include the `Authorization` header, causing a 401 error. Always use `fetch()` with the token.
 
 **Best Practices:**
 1. Show loading state during backup creation (can take several seconds)
 2. Handle 409 errors gracefully (inform user, disable button)
 3. Automatically trigger download on successful backup creation
 4. Consider debouncing backup button clicks
+
+---
+
+### POST `/api/ops/restore` *(ADMIN Only)*
+
+Restore database and file storage from a previously downloaded backup ZIP file.
+
+> ⚠️ **CRITICAL:** This is a **destructive operation**. All current data will be replaced with backup contents. The server will **shut down** after successful restore and must be restarted manually.
+
+**Security:**
+- Requires authentication with **ADMIN role**
+- Prevents concurrent restores (409 Conflict)
+- Cannot run while backup is in progress
+- Strict ZIP validation (path traversal prevention)
+- Creates emergency backup before restore
+
+**Request:**
+```http
+POST /api/ops/restore
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+backup: <ZIP file>
+```
+
+**Limits:**
+- Max file size: **100MB**
+- Allowed types: `.zip` only
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "restartRequired": true,
+  "photosRestored": 42,
+  "emergencyBackupPath": "emergency_pre_restore_2026-01-05T15-30-00-000Z.db",
+  "restoredAt": "2026-01-05T15:30:00.000Z"
+}
+```
+
+> **Note:** After this response, the server will exit. Restart required.
+
+**Response (400 Bad Request):**
+```json
+{ "error": "Invalid backup: swipe.db not found at root", "requestId": "uuid" }
+```
+
+**Response (403 Forbidden):**
+```json
+{ "error": "Admin access required for restore operations", "requestId": "uuid" }
+```
+
+**Response (409 Conflict):**
+```json
+{ "error": "Restore already in progress", "requestId": "uuid" }
+```
+
+**Response (415 Unsupported Media Type):**
+```json
+{ "error": "Only ZIP files are allowed", "requestId": "uuid" }
+```
+
+**Frontend Integration Example:**
+```javascript
+const restoreFromBackup = async (file) => {
+  const formData = new FormData();
+  formData.append('backup', file);
+  
+  const response = await fetch('/api/ops/restore', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData
+  });
+  
+  if (response.status === 403) {
+    alert('Admin access required');
+    return;
+  }
+  
+  if (!response.ok) {
+    const { error } = await response.json();
+    throw new Error(error);
+  }
+  
+  const result = await response.json();
+  alert(`Restore complete! ${result.photosRestored} photos restored. Server will restart.`);
+  // Connection will be lost - handle reconnection logic
+};
+```
+
+**Best Practices:**
+1. Show prominent warning before restore (data loss)
+2. Require confirmation dialog
+3. Handle connection loss after successful restore
+4. Implement automatic reconnection with retry logic
+
 
 ---
 

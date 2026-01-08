@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useProductStore } from '@/lib/store/productStore';
-import { FiX, FiLoader } from 'react-icons/fi';
+import { FiX, FiLoader, FiCheck } from 'react-icons/fi';
 import { useMasterStore } from '@/lib/store/masterStore';
 import { FiArrowLeft, FiPlusCircle, FiImage, FiMoreHorizontal, FiPlus, FiMinus, FiChevronDown, FiChevronUp, FiLock, FiUnlock, FiRefreshCw } from 'react-icons/fi';
+import { useFormValidation } from '@/lib/hooks/formValidation';
+import { productSchema } from '@/lib/validation/validationSchemas';
 import styles from '../page.module.css';
 
 export default function AddProductPage() {
@@ -84,6 +86,23 @@ export default function AddProductPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
+    // Form validation hook
+    const {
+        saveStatus,
+        lastSavedAtFormatted,
+        errors,
+        validate,
+        markDraft,
+        startSaving,
+        markSaved,
+        markFailed
+    } = useFormValidation(productSchema);
+
+    const handleFieldChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        markDraft(field);
+    };
+
     const searchParams = useSearchParams();
     const returnUrl = searchParams.get('returnUrl');
     const initialBarcode = searchParams.get('barcode');
@@ -107,7 +126,12 @@ export default function AddProductPage() {
     }, [formData.category, formData.subCategory, skuLocked]);
 
     const handleSave = async () => {
-        if (!formData.name) return alert('Product Name is required');
+        // Validate before submit
+        const { success } = validate(formData);
+        if (!success) return;
+
+        // Double-submit prevention
+        if (!startSaving()) return;
 
         // Audit Log for Manual SKU - via backend API
         if (!skuLocked) {
@@ -230,8 +254,8 @@ export default function AddProductPage() {
                 router.push('/products');
             }
         } catch (error) {
+            markFailed(error);
             console.error('Failed to save product:', error);
-            alert('Failed to save product: ' + error.message);
         }
     };
 
@@ -284,12 +308,16 @@ export default function AddProductPage() {
                     </label>
                 </div>
 
-                <input
-                    className={styles.input}
-                    placeholder="Product Name / Title"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                />
+                <div style={{ marginBottom: 12 }}>
+                    <input
+                        className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
+                        placeholder="Product Name / Title"
+                        value={formData.name}
+                        onChange={e => handleFieldChange('name', e.target.value)}
+                        style={{ marginBottom: errors.name ? 4 : 0 }}
+                    />
+                    {errors.name && <div className={styles.fieldError}>{errors.name}</div>}
+                </div>
                 <div style={{ display: 'flex', gap: 12 }}>
                     <select
                         className={styles.select}
@@ -699,13 +727,29 @@ export default function AddProductPage() {
             </div>
 
             <div className={styles.footer}>
+                {/* Save Status Indicator */}
+                {saveStatus === 'saved' && lastSavedAtFormatted && (
+                    <div className={styles.saveIndicator}>
+                        <FiCheck size={14} /> Saved at {lastSavedAtFormatted}
+                    </div>
+                )}
+                {saveStatus === 'failed' && (
+                    <div className={`${styles.saveIndicator} ${styles.saveIndicatorFailed}`}>
+                        Save failed. Your changes are safe.
+                    </div>
+                )}
                 <button
                     className={styles.saveButton}
                     onClick={handleSave}
-                    disabled={isUploading}
-                    style={isUploading ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
+                    disabled={isUploading || saveStatus === 'saving'}
+                    style={(isUploading || saveStatus === 'saving') ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
                 >
-                    {isUploading ? (
+                    {saveStatus === 'saving' ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <FiLoader style={{ animation: 'spin 1s linear infinite' }} />
+                            Saving...
+                        </span>
+                    ) : isUploading ? (
                         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <FiLoader style={{ animation: 'spin 1s linear infinite' }} />
                             Uploading {uploadProgress.current}/{uploadProgress.total}...

@@ -222,3 +222,33 @@
     cursor: pointer;
     font-size: 16px;
 }
+
+.saveButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.inputError {
+    border-color: #ef4444 !important;
+}
+
+.fieldError {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+
+.saveIndicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #16a34a;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.saveIndicatorFailed {
+    color: #ef4444;
+}

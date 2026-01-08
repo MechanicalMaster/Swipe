@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { usePartyStore } from '@/lib/store/partyStore';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
-import { FiArrowLeft, FiPlusCircle, FiUpload, FiX } from 'react-icons/fi';
+import { useFormValidation } from '@/lib/hooks/formValidation';
+import { customerSchema } from '@/lib/validation/validationSchemas';
+import { FiArrowLeft, FiPlusCircle, FiUpload, FiX, FiCheck } from 'react-icons/fi';
 import styles from '../../form.module.css';
 
 export default function AddCustomerPage() {
@@ -19,6 +21,24 @@ export default function AddCustomerPage() {
         documents: []
     });
     const [showBillingAddress, setShowBillingAddress] = useState(false);
+
+    // Form validation hook
+    const {
+        saveStatus,
+        lastSavedAtFormatted,
+        errors,
+        saveError,
+        validate,
+        markDraft,
+        startSaving,
+        markSaved,
+        markFailed
+    } = useFormValidation(customerSchema);
+
+    const handleFieldChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        markDraft(field);
+    };
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -37,6 +57,7 @@ export default function AddCustomerPage() {
             };
             reader.readAsDataURL(file);
         });
+        markDraft();
     };
 
     const removeDocument = (index) => {
@@ -44,6 +65,7 @@ export default function AddCustomerPage() {
             ...prev,
             documents: prev.documents.filter((_, i) => i !== index)
         }));
+        markDraft();
     };
 
     const searchParams = useSearchParams();
@@ -51,20 +73,33 @@ export default function AddCustomerPage() {
     const { setCustomer } = useInvoiceStore();
 
     const handleSave = async () => {
-        if (!formData.name) return alert('Name is required');
-        if (formData.phone && formData.phone.length !== 10) return alert('Phone number must be 10 digits');
-        const id = await addCustomer(formData);
+        // Validate before submit
+        const { success } = validate(formData);
+        if (!success) return;
 
-        if (returnUrl) {
-            // If returning to invoice, set the new customer as selected
-            if (returnUrl.includes('invoice')) {
-                setCustomer({ ...formData, id });
+        // Double-submit prevention
+        if (!startSaving()) return;
+
+        try {
+            const id = await addCustomer(formData);
+
+            markSaved();
+
+            if (returnUrl) {
+                // If returning to invoice, set the new customer as selected
+                if (returnUrl.includes('invoice')) {
+                    setCustomer({ ...formData, id });
+                }
+                router.push(returnUrl);
+            } else {
+                router.push('/parties');
             }
-            router.push(returnUrl);
-        } else {
-            router.push('/parties');
+        } catch (error) {
+            markFailed(error);
         }
     };
+
+    const isSaving = saveStatus === 'saving';
 
     return (
         <div className={styles.container}>
@@ -77,31 +112,39 @@ export default function AddCustomerPage() {
 
             <div className={styles.sectionLabel}>Basic Details</div>
             <div className={styles.card}>
-                <input
-                    className={styles.input}
-                    placeholder="Name *"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    style={{ marginBottom: 12 }}
-                />
+                <div style={{ marginBottom: 12 }}>
+                    <input
+                        className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
+                        placeholder="Name *"
+                        value={formData.name}
+                        onChange={e => handleFieldChange('name', e.target.value)}
+                    />
+                    {errors.name && <div className={styles.fieldError}>{errors.name}</div>}
+                </div>
                 <div className={styles.row} style={{ marginBottom: 12 }}>
                     <div style={{ padding: 12, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8 }}>🇮🇳 +91</div>
-                    <input
-                        className={styles.input}
-                        placeholder="Enter Phone Number"
-                        value={formData.phone}
-                        onChange={e => {
-                            const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                            setFormData({ ...formData, phone: value });
-                        }}
-                    />
+                    <div style={{ flex: 1 }}>
+                        <input
+                            className={`${styles.input} ${errors.phone ? styles.inputError : ''}`}
+                            placeholder="Enter Phone Number"
+                            value={formData.phone}
+                            onChange={e => {
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                handleFieldChange('phone', value);
+                            }}
+                        />
+                        {errors.phone && <div className={styles.fieldError}>{errors.phone}</div>}
+                    </div>
                 </div>
-                <input
-                    className={styles.input}
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                />
+                <div>
+                    <input
+                        className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={e => handleFieldChange('email', e.target.value)}
+                    />
+                    {errors.email && <div className={styles.fieldError}>{errors.email}</div>}
+                </div>
             </div>
 
             <div className={styles.sectionLabel}>Billing Address (Optional)</div>
@@ -116,7 +159,7 @@ export default function AddCustomerPage() {
                         className={styles.textarea}
                         placeholder="Enter Billing Address"
                         value={formData.address}
-                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                        onChange={e => handleFieldChange('address', e.target.value)}
                         autoFocus
                     />
                 )}
@@ -152,7 +195,25 @@ export default function AddCustomerPage() {
             </div>
 
             <div className={styles.footer}>
-                <button className={styles.saveButton} onClick={handleSave}>Add Customer</button>
+                {/* Save Status Indicator */}
+                {saveStatus === 'saved' && lastSavedAtFormatted && (
+                    <div className={styles.saveIndicator} style={{ marginBottom: 8 }}>
+                        <FiCheck size={14} /> Saved at {lastSavedAtFormatted}
+                    </div>
+                )}
+                {saveStatus === 'failed' && (
+                    <div className={`${styles.saveIndicator} ${styles.saveIndicatorFailed}`} style={{ marginBottom: 8 }}>
+                        Save failed. Your changes are safe.
+                    </div>
+                )}
+
+                <button
+                    className={styles.saveButton}
+                    onClick={handleSave}
+                    disabled={isSaving}
+                >
+                    {isSaving ? 'Saving...' : 'Add Customer'}
+                </button>
             </div>
         </div>
     );

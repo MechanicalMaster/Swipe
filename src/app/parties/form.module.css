@@ -154,3 +154,31 @@
     border-radius: 12px;
     font-weight: 600;
 }
+
+.saveButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.inputError {
+    border-color: #ef4444 !important;
+}
+
+.fieldError {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.saveIndicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.saveIndicatorFailed {
+    color: #ef4444;
+}

@@ -3,7 +3,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePartyStore } from '@/lib/store/partyStore';
-import { FiArrowLeft, FiMoreHorizontal, FiPlayCircle, FiPlusCircle, FiCopy, FiChevronDown } from 'react-icons/fi';
+import { useFormValidation } from '@/lib/hooks/formValidation';
+import { vendorSchema } from '@/lib/validation/validationSchemas';
+import { FiArrowLeft, FiMoreHorizontal, FiPlayCircle, FiPlusCircle, FiCopy, FiChevronDown, FiCheck } from 'react-icons/fi';
 import { AddressBottomSheet } from '@/components/AddressBottomSheet';
 import AnimatedButton from '@/components/AnimatedButton';
 import styles from './page.module.css';
@@ -28,6 +30,18 @@ function VendorEditContent() {
     const [isBillingSheetOpen, setIsBillingSheetOpen] = useState(false);
     const [isShippingSheetOpen, setIsShippingSheetOpen] = useState(false);
 
+    // Form validation hook
+    const {
+        saveStatus,
+        lastSavedAtFormatted,
+        errors,
+        validate,
+        markDraft,
+        startSaving,
+        markSaved,
+        markFailed
+    } = useFormValidation(vendorSchema);
+
     useEffect(() => {
         if (id) {
             const vendor = getVendor(id);
@@ -45,19 +59,24 @@ function VendorEditContent() {
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
+        markDraft(name);
     };
 
     const handleSave = async () => {
-        if (!formData.name) {
-            alert('Name is required');
-            return;
+        // Validate before submit
+        const { success } = validate(formData);
+        if (!success) return;
+
+        // Double-submit prevention
+        if (!startSaving()) return;
+
+        try {
+            await updateVendor(parseInt(id), formData);
+            markSaved();
+            router.back();
+        } catch (error) {
+            markFailed(error);
         }
-        if (formData.phone && formData.phone.length !== 10) {
-            alert('Phone number must be 10 digits');
-            return;
-        }
-        await updateVendor(parseInt(id), formData);
-        router.back();
     };
 
     const handleAddressSave = (type, addressData) => {
@@ -70,6 +89,7 @@ function VendorEditContent() {
         } else {
             setFormData(prev => ({ ...prev, shippingAddress: addressData }));
         }
+        markDraft();
     };
 
     const toggleSameAsBilling = () => {
@@ -81,7 +101,10 @@ function VendorEditContent() {
                 shippingAddress: newSame ? prev.billingAddress : prev.shippingAddress
             };
         });
+        markDraft();
     };
+
+    const isSaving = saveStatus === 'saving';
 
     return (
         <div className={styles.container}>
@@ -109,36 +132,39 @@ function VendorEditContent() {
 
                     <div className={styles.inputGroup}>
                         <input
-                            className={styles.input}
+                            className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
                             placeholder=" "
                         />
                         <label className={styles.label}>Name <span style={{ color: 'red' }}>*</span></label>
+                        {errors.name && <div className={styles.fieldError}>{errors.name}</div>}
                     </div>
 
                     <div className={styles.phoneInputContainer} style={{ marginBottom: '16px' }}>
                         <img src="https://flagcdn.com/w40/in.png" alt="IN" className={styles.flag} />
                         <span className={styles.phonePrefix}>IN +91 <FiChevronDown size={12} /></span>
                         <input
-                            className={styles.phoneInput}
+                            className={`${styles.phoneInput} ${errors.phone ? styles.inputError : ''}`}
                             name="phone"
                             value={formData.phone}
                             onChange={handleChange}
                             placeholder="Enter Phone Number"
                         />
                     </div>
+                    {errors.phone && <div className={styles.fieldError} style={{ marginTop: -12, marginBottom: 16 }}>{errors.phone}</div>}
 
                     <div className={styles.inputGroup} style={{ marginBottom: 0 }}>
                         <input
-                            className={styles.input}
+                            className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
                             placeholder=" "
                         />
                         <label className={styles.label}>Email</label>
+                        {errors.email && <div className={styles.fieldError}>{errors.email}</div>}
                     </div>
                 </div>
 
@@ -205,8 +231,24 @@ function VendorEditContent() {
                     </div>
                 </div>
 
-                <AnimatedButton className={styles.updateButton} onClick={handleSave}>
-                    Update Vendor
+                {/* Save Status Indicator */}
+                {saveStatus === 'saved' && lastSavedAtFormatted && (
+                    <div className={styles.saveIndicator} style={{ marginBottom: 12 }}>
+                        <FiCheck size={14} /> Saved at {lastSavedAtFormatted}
+                    </div>
+                )}
+                {saveStatus === 'failed' && (
+                    <div className={`${styles.saveIndicator} ${styles.saveIndicatorFailed}`} style={{ marginBottom: 12 }}>
+                        Save failed. Your changes are safe.
+                    </div>
+                )}
+
+                <AnimatedButton
+                    className={styles.updateButton}
+                    onClick={handleSave}
+                    disabled={isSaving}
+                >
+                    {isSaving ? 'Saving...' : 'Update Vendor'}
                 </AnimatedButton>
             </div>
 

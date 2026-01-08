@@ -7,7 +7,9 @@ import { useSettingsStore } from '@/lib/store/settingsStore';
 import { useEffect } from 'react';
 import { formatCurrency } from '@/lib/utils/tax';
 import { generatePDF } from '@/lib/utils/pdf';
-import { FiPlus, FiTrash2, FiCalendar, FiUser, FiBox, FiArrowLeft } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCalendar, FiUser, FiBox, FiArrowLeft, FiCheck, FiLoader } from 'react-icons/fi';
+import { useFormValidation } from '@/lib/hooks/formValidation';
+import { invoiceSchema } from '@/lib/validation/validationSchemas';
 import styles from './InvoiceForm.module.css';
 
 export default function InvoiceForm() {
@@ -33,17 +35,34 @@ export default function InvoiceForm() {
 
     const totals = calculateTotals();
 
+    // Form validation hook
+    const {
+        saveStatus,
+        lastSavedAtFormatted,
+        errors,
+        validate,
+        startSaving,
+        markSaved,
+        markFailed,
+        clearErrors
+    } = useFormValidation(invoiceSchema);
+
     const handleSave = async () => {
-        if (!customer) return alert('Please select a customer');
-        if (items.length === 0) return alert('Please add at least one item');
+        // Validate visible fields only
+        const { success } = validate({ customer, items });
+        if (!success) return;
+
+        // Double-submit prevention
+        if (!startSaving()) return;
 
         try {
             const savedId = await saveInvoice();
+            markSaved();
             resetInvoice(); // Clear form
             router.push(`/invoice/view?id=${savedId}`);
         } catch (error) {
+            markFailed(error);
             console.error('Failed to save invoice:', error);
-            alert('Failed to save invoice: ' + error.message);
         }
     };
 
@@ -116,6 +135,7 @@ export default function InvoiceForm() {
                         <FiPlus /> Select Customer
                     </button>
                 )}
+                {errors.customer && <div className={styles.fieldError}>{errors.customer}</div>}
             </div>
 
             <div className={styles.sectionTitle}>
@@ -434,9 +454,31 @@ export default function InvoiceForm() {
                         </>
                     )}
                 </div>
-                <button className={styles.createButton} onClick={handleSave}>
-                    {id ? 'Update' : 'Create'} <FiArrowLeft style={{ transform: 'rotate(180deg)' }} />
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                    {/* Save Status Indicator */}
+                    {saveStatus === 'saved' && lastSavedAtFormatted && (
+                        <div className={styles.saveIndicator}>
+                            <FiCheck size={14} /> Saved at {lastSavedAtFormatted}
+                        </div>
+                    )}
+                    {saveStatus === 'failed' && (
+                        <div className={`${styles.saveIndicator} ${styles.saveIndicatorFailed}`}>
+                            Save failed. Your changes are safe.
+                        </div>
+                    )}
+                    {errors.items && <div className={styles.fieldError}>{errors.items}</div>}
+                    <button
+                        className={styles.createButton}
+                        onClick={handleSave}
+                        disabled={saveStatus === 'saving'}
+                    >
+                        {saveStatus === 'saving' ? (
+                            <><FiLoader style={{ animation: 'spin 1s linear infinite' }} /> Saving...</>
+                        ) : (
+                            <>{id ? 'Update' : 'Create'} <FiArrowLeft style={{ transform: 'rotate(180deg)' }} /></>
+                        )}
+                    </button>
+                </div>
             </div>
         </div>
     );

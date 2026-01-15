@@ -13,13 +13,12 @@ import styles from '../page.module.css';
 export default function AddProductPage() {
     const router = useRouter();
     const { addProduct, generateSKU, uploadProductImage } = useProductStore();
-    const { categories, loadCategories, subCategories, loadSubCategories } = useMasterStore();
+    const { categories, loadCategories } = useMasterStore();
 
     const [skuLocked, setSkuLocked] = useState(true);
 
     useEffect(() => {
         loadCategories();
-        loadSubCategories();
     }, []);
 
     const [formData, setFormData] = useState({
@@ -27,11 +26,8 @@ export default function AddProductPage() {
         name: '',
         sellingPrice: '',
         purchasePrice: '',
-        taxRate: 3, // Default 3% for jewelry usually
-        unit: 'gms', // Default unit
         unit: 'gms', // Default unit
         category: '',
-        subCategory: '',
         sku: '',
         description: '',
 
@@ -114,16 +110,16 @@ export default function AddProductPage() {
         }
     }, [initialBarcode]);
 
-    // Auto-generate SKU
+    // Auto-generate SKU based on category
     useEffect(() => {
         const gen = async () => {
-            if (formData.category && formData.subCategory && skuLocked) {
-                const newSku = await generateSKU(formData.category, formData.subCategory);
+            if (formData.category && skuLocked) {
+                const newSku = await generateSKU(formData.category, formData.category);
                 setFormData(prev => ({ ...prev, sku: newSku }));
             }
         };
         gen();
-    }, [formData.category, formData.subCategory, skuLocked]);
+    }, [formData.category, skuLocked]);
 
     const handleSave = async () => {
         // Validate before submit
@@ -154,10 +150,8 @@ export default function AddProductPage() {
             name: formData.name,
             sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : null,
             purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : null,
-            taxRate: formData.taxRate,
             unit: formData.unit,
             category: formData.category,
-            subCategory: formData.subCategory,
             sku: formData.sku,
             description: formData.description,
             vendorRef: formData.vendorRef,
@@ -165,17 +159,19 @@ export default function AddProductPage() {
             hallmarkCert: formData.hallmarkCert,
             barcode: formData.barcode,
             launchDate: formData.launchDate || null,
-            showOnline: formData.showOnline,
-            notForSale: formData.notForSale,
+            showOnline: Boolean(formData.showOnline),
+            notForSale: Boolean(formData.notForSale),
             // images: NOT included - managed via separate API calls
+
+            // Top-level jewellery fields (per updated schema)
+            grossWeight: Number(formData.grossWeight || 0),
+            netWeight: Number(formData.netWeight || 0),
+            purity: formData.purity,
 
             // Nested Objects
             metal: {
                 type: formData.metalType,
                 color: formData.metalColor,
-                purity: formData.purity,
-                grossWeight: Number(formData.grossWeight || 0),
-                netWeight: Number(formData.netWeight || 0),
                 wastagePercentage: Number(formData.wastagePercentage || 0),
                 wastageWeight: Number(formData.wastageWeight || 0),
                 makingCharges: Number(formData.makingCharges || 0),
@@ -318,37 +314,17 @@ export default function AddProductPage() {
                     />
                     {errors.name && <div className={styles.fieldError}>{errors.name}</div>}
                 </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <select
-                        className={styles.select}
-                        value={formData.category}
-                        onChange={e => setFormData({ ...formData, category: e.target.value, subCategory: '' })}
-                        style={{ flex: 1 }}
-                    >
-                        <option value="">Select Category</option>
-                        {categories.map(c => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
-                        ))}
-                    </select>
-                    <select
-                        className={styles.select}
-                        value={formData.subCategory}
-                        onChange={e => setFormData({ ...formData, subCategory: e.target.value })}
-                        style={{ flex: 1 }}
-                        disabled={!formData.category}
-                    >
-                        <option value="">Select Sub-category</option>
-                        {subCategories
-                            .filter(sc => {
-                                const parent = categories.find(c => c.name === formData.category);
-                                return parent && sc.categoryId === parent.id;
-                            })
-                            .map(sc => (
-                                <option key={sc.id} value={sc.name}>{sc.name}</option>
-                            ))
-                        }
-                    </select>
-                </div>
+                <select
+                    className={styles.select}
+                    value={formData.category}
+                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                    style={{ marginBottom: 12 }}
+                >
+                    <option value="">Select Category</option>
+                    {categories.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                </select>
                 <div style={{ position: 'relative' }}>
                     <input
                         className={styles.input}
@@ -632,23 +608,9 @@ export default function AddProductPage() {
                 </div>
             </div>
 
-            {/* Taxation & Compliance */}
-            <div className={styles.sectionTitle}>Taxation & Compliance</div>
+            {/* Compliance */}
+            <div className={styles.sectionTitle}>Compliance</div>
             <div className={styles.card}>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <select
-                        className={styles.select}
-                        value={formData.taxRate}
-                        onChange={e => setFormData({ ...formData, taxRate: Number(e.target.value) })}
-                        style={{ flex: 1, marginBottom: 12 }}
-                    >
-                        <option value={0}>Tax Rate 0%</option>
-                        <option value={3}>Tax Rate 3%</option>
-                        <option value={5}>Tax Rate 5%</option>
-                        <option value={12}>Tax Rate 12%</option>
-                        <option value={18}>Tax Rate 18%</option>
-                    </select>
-                </div>
                 <input
                     className={styles.input}
                     placeholder="BIS Hallmark Cert Number"

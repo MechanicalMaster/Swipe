@@ -5,6 +5,34 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useInvoiceStore } from '@/lib/store/invoiceStore';
 import { formatCurrency } from '@/lib/utils/tax';
 import { shareInvoicePDF, downloadInvoicePDF } from '@/lib/utils/invoiceActions';
+
+// Format date helper
+const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    } catch (e) {
+        return dateString;
+    }
+};
+
+// Extract address from customer object
+const formatAddress = (customer) => {
+    if (!customer) return 'N/A';
+    const addr = customer.address;
+    if (!addr) return 'N/A';
+    if (typeof addr === 'string') return addr || 'N/A';
+    // Object format
+    const parts = [addr.line1, addr.line2, addr.city, addr.state, addr.pincode].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'N/A';
+};
+
+
 import BottomSheet from '@/components/BottomSheet';
 import {
     FiArrowLeft, FiEdit, FiMoreHorizontal, FiShare2, FiPrinter, FiDownload,
@@ -147,12 +175,12 @@ function InvoiceViewContent() {
                         <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
                             Invoice date <FiEdit size={10} />
                         </div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{invoice.date}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{formatDate(invoice.date)}</div>
                     </div>
 
                     <div>
                         <div style={{ fontSize: 12, color: '#6b7280' }}>Billing Address</div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{invoice.customer.address || 'NA'}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{formatAddress(invoice.customer)}</div>
                     </div>
                 </div>
 
@@ -165,7 +193,7 @@ function InvoiceViewContent() {
                         <div key={idx} style={{ padding: 16, borderBottom: '1px solid #f3f4f6' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                                 <div style={{ fontWeight: 600 }}>{item.description || item.name || 'Unnamed Item'}</div>
-                                <div style={{ fontWeight: 600 }}>{formatCurrency(item.rate || 0)}</div>
+                                <div style={{ fontWeight: 600 }}>{formatCurrency(item.itemTotal || item.total || 0)}</div>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6b7280' }}>
                                 <div>x {item.quantity || 1}</div>
@@ -178,10 +206,34 @@ function InvoiceViewContent() {
                             <div>Subtotal</div>
                             <div>{formatCurrency(invoice.totals?.subtotal || 0)}</div>
                         </div>
-                        {/* Add other charges here if present */}
+                        {/* Tax breakdown - only show if non-zero */}
+                        {(invoice.totals?.cgst > 0 || invoice.totals?.sgst > 0) && (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12, color: '#6b7280' }}>
+                                    <div>CGST (1.5%)</div>
+                                    <div>{formatCurrency(invoice.totals?.cgst || 0)}</div>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12, color: '#6b7280' }}>
+                                    <div>SGST (1.5%)</div>
+                                    <div>{formatCurrency(invoice.totals?.sgst || 0)}</div>
+                                </div>
+                            </>
+                        )}
+                        {invoice.totals?.igst > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12, color: '#6b7280' }}>
+                                <div>IGST (3%)</div>
+                                <div>{formatCurrency(invoice.totals?.igst || 0)}</div>
+                            </div>
+                        )}
+                        {invoice.totals?.roundOff !== 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12, color: '#6b7280' }}>
+                                <div>Round Off</div>
+                                <div>{formatCurrency(invoice.totals?.roundOff || 0)}</div>
+                            </div>
+                        )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 14 }}>
                             <div>Total Amount</div>
-                            <div>{formatCurrency(invoice.totals?.grandTotal || invoice.totals?.total || 0)}</div>
+                            <div>{formatCurrency(invoice.totals?.grandTotal || 0)}</div>
                         </div>
                     </div>
                 </div>
@@ -193,7 +245,7 @@ function InvoiceViewContent() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontWeight: 600 }}>{invoice.date}</span>
+                                    <span style={{ fontWeight: 600 }}>{formatDate(invoice.date)}</span>
                                     <span style={{ background: '#dcfce7', color: '#166534', fontSize: 10, padding: '2px 6px', borderRadius: 4 }}>
                                         {invoice.payment?.mode}
                                     </span>

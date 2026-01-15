@@ -212,6 +212,33 @@ export class ApiError extends Error {
 /**
  * Core request function with error handling and timeout
  */
+/**
+ * Convert snake_case string to camelCase
+ */
+const toCamelCase = (str) => {
+    return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+};
+
+/**
+ * Recursively convert object keys from snake_case to camelCase
+ */
+const keysToCamelCase = (obj) => {
+    if (obj === null || typeof obj !== 'object') {
+        return obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(keysToCamelCase);
+    }
+    const n = {};
+    Object.keys(obj).forEach((k) => {
+        n[toCamelCase(k)] = keysToCamelCase(obj[k]);
+    });
+    return n;
+};
+
+/**
+ * Core request function with error handling and timeout
+ */
 async function request(method, endpoint, data = null, options = {}) {
     // Ensure API_BASE is configured
     if (!API_BASE) {
@@ -221,6 +248,7 @@ async function request(method, endpoint, data = null, options = {}) {
             throw new ApiError('Backend URL not configured. Please configure the server connection.', 0, null);
         }
     }
+
 
     const url = `${API_BASE}${endpoint}`;
 
@@ -279,7 +307,8 @@ async function request(method, endpoint, data = null, options = {}) {
             return null;
         }
 
-        return await response.json();
+        const data = await response.json();
+        return keysToCamelCase(data);
     } catch (error) {
         clearTimeout(timeoutId);
 
@@ -517,16 +546,13 @@ export const api = {
         delete: (id) => api.delete(`/payments/${id}`),
     },
 
-    // Categories & Subcategories
+    // Categories (subcategories removed from backend schema)
     categories: {
         list: () => api.get('/categories'),
         get: (id) => api.get(`/categories/${id}`),
         create: (data) => api.post('/categories', data),
         update: (id, data) => api.put(`/categories/${id}`, data),
         delete: (id) => api.delete(`/categories/${id}`),
-        addSubcategory: (categoryId, data) => api.post(`/categories/${categoryId}/subcategories`, data),
-        deleteSubcategory: (categoryId, subcategoryId) =>
-            api.delete(`/categories/${categoryId}/subcategories/${subcategoryId}`),
     },
 
     // Settings

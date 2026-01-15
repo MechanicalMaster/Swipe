@@ -5,33 +5,25 @@ import { useRouter } from 'next/navigation';
 import { useMasterStore } from '@/lib/store/masterStore';
 import { FiArrowLeft, FiPlus, FiSearch, FiEdit2, FiX, FiCheck } from 'react-icons/fi';
 import styles from './page.module.css';
-import clsx from 'clsx';
 
 export default function ProductMastersPage() {
     const router = useRouter();
     const {
         categories, loadCategories,
-        subCategories, loadSubCategories,
-        addCategory, updateCategory, deleteCategory,
-        addSubCategory, updateSubCategory, deleteSubCategory
+        addCategory, updateCategory, deleteCategory
     } = useMasterStore();
 
-    const [activeTab, setActiveTab] = useState('categories'); // 'categories' | 'subcategories'
     const [search, setSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null); // If set, we are editing
 
     useEffect(() => {
         loadCategories();
-        loadSubCategories();
     }, []);
 
-    const filteredItems = activeTab === 'categories'
-        ? categories.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-        : subCategories.filter(sc =>
-            sc.name.toLowerCase().includes(search.toLowerCase()) ||
-            categories.find(c => c.id === sc.categoryId)?.name.toLowerCase().includes(search.toLowerCase())
-        );
+    const filteredItems = categories.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase())
+    );
 
     const handleEdit = (item) => {
         setEditingItem(item);
@@ -51,23 +43,7 @@ export default function ProductMastersPage() {
                     <button className={styles.backButton} onClick={() => router.back()}>
                         <FiArrowLeft />
                     </button>
-                    <div className={styles.title}>Product Masters</div>
-                </div>
-            </div>
-
-            {/* Tabs */}
-            <div className={styles.tabContainer}>
-                <div
-                    className={clsx(styles.tab, activeTab === 'categories' && styles.active)}
-                    onClick={() => setActiveTab('categories')}
-                >
-                    Categories
-                </div>
-                <div
-                    className={clsx(styles.tab, activeTab === 'subcategories' && styles.active)}
-                    onClick={() => setActiveTab('subcategories')}
-                >
-                    Sub-Categories
+                    <div className={styles.title}>Product Categories</div>
                 </div>
             </div>
 
@@ -77,7 +53,7 @@ export default function ProductMastersPage() {
                     <FiSearch color="#9ca3af" size={20} />
                     <input
                         className={styles.searchInput}
-                        placeholder={`Search ${activeTab === 'categories' ? 'categories...' : 'sub-categories...'}`}
+                        placeholder="Search categories..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -90,18 +66,13 @@ export default function ProductMastersPage() {
                     <div key={item.id} className={styles.itemCard} onClick={() => handleEdit(item)}>
                         <div className={styles.itemInfo}>
                             <div className={styles.itemName}>{item.name}</div>
-                            {activeTab === 'subcategories' && (
-                                <div className={styles.itemSub}>
-                                    {categories.find(c => c.id === item.categoryId)?.name || 'Unknown Category'}
-                                </div>
-                            )}
                         </div>
                         <FiEdit2 color="#6b7280" />
                     </div>
                 ))}
                 {filteredItems.length === 0 && (
                     <div style={{ textAlign: 'center', color: '#9ca3af', marginTop: 32 }}>
-                        No {activeTab} found
+                        No categories found
                     </div>
                 )}
             </div>
@@ -109,20 +80,17 @@ export default function ProductMastersPage() {
             {/* FAB */}
             <div className={styles.fab} onClick={handleAdd}>
                 <FiPlus size={24} />
-                <span>NEW {activeTab === 'categories' ? 'CATEGORY' : 'SUB-CATEGORY'}</span>
+                <span>NEW CATEGORY</span>
             </div>
 
             {/* Modal */}
             {isModalOpen && (
-                <MasterModal
+                <CategoryModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
-                    mode={activeTab}
                     item={editingItem}
-                    categories={categories}
                     actions={{
-                        addCategory, updateCategory, deleteCategory,
-                        addSubCategory, updateSubCategory, deleteSubCategory
+                        addCategory, updateCategory, deleteCategory
                     }}
                 />
             )}
@@ -130,48 +98,31 @@ export default function ProductMastersPage() {
     );
 }
 
-function MasterModal({ isOpen, onClose, mode, item, categories, actions }) {
-    // Shared State
+function CategoryModal({ isOpen, onClose, item, actions }) {
     const [name, setName] = useState(item ? item.name : '');
-    const [categoryId, setCategoryId] = useState(item ? item.categoryId : '');
 
     // Reset when modal opens/changes
     useEffect(() => {
         if (isOpen) {
             setName(item ? item.name : '');
-            setCategoryId(item ? item.categoryId : '');
         }
     }, [isOpen, item]);
 
     const handleSave = async () => {
         if (!name.trim()) return alert('Name is required');
 
-        if (mode === 'categories') {
-            if (item) {
-                await actions.updateCategory(item.id, { name });
-            } else {
-                await actions.addCategory(name);
-            }
+        if (item) {
+            await actions.updateCategory(item.id, { name });
         } else {
-            // Subcategory
-            if (!categoryId) return alert('Category is required for Sub-Category');
-            if (item) {
-                await actions.updateSubCategory(item.id, { name, categoryId });
-            } else {
-                await actions.addSubCategory(name, categoryId);
-            }
+            await actions.addCategory(name);
         }
         onClose();
     };
 
     const handleDelete = async () => {
         if (!item) return;
-        if (confirm('Are you sure you want to delete this item?')) {
-            if (mode === 'categories') {
-                await actions.deleteCategory(item.id);
-            } else {
-                await actions.deleteSubCategory(item.id);
-            }
+        if (confirm('Are you sure you want to delete this category?')) {
+            await actions.deleteCategory(item.id);
             onClose();
         }
     };
@@ -183,7 +134,7 @@ function MasterModal({ isOpen, onClose, mode, item, categories, actions }) {
             <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
                 <div className={styles.modalHeader}>
                     <div className={styles.modalTitle}>
-                        {item ? 'Edit' : 'Add'} {mode === 'categories' ? 'Category' : 'Sub-Category'}
+                        {item ? 'Edit' : 'Add'} Category
                     </div>
                     <button className={styles.closeButton} onClick={onClose}>
                         <FiX />
@@ -195,28 +146,12 @@ function MasterModal({ isOpen, onClose, mode, item, categories, actions }) {
                         <label className={styles.label}>Name</label>
                         <input
                             className={styles.input}
-                            placeholder="Enter Name"
+                            placeholder="Enter Category Name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             autoFocus
                         />
                     </div>
-
-                    {mode === 'subcategories' && (
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Parent Category</label>
-                            <select
-                                className={styles.select}
-                                value={categoryId}
-                                onChange={(e) => setCategoryId(e.target.value)}
-                            >
-                                <option value="">Select Category</option>
-                                {categories.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
                 </div>
 
                 <div className={styles.modalFooter}>

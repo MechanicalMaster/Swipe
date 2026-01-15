@@ -54,7 +54,7 @@ export default function ScanResultModal({
                             </div>
                             <div className={styles.productDetails}>
                                 <div className={styles.purity}>{product.purity || '22K'}</div>
-                                <h3 className={styles.productName}>{product.name || product.subCategory}</h3>
+                                <h3 className={styles.productName}>{product.name || product.category}</h3>
                                 <div className={styles.productMeta}>
                                     Weight: {product.grossWeight || 0}g | {product.stoneType || 'Plain Gold'}
                                 </div>

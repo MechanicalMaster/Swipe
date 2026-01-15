@@ -10,6 +10,21 @@ import styles from './page.module.css';
 
 import ComingSoon from '@/components/ComingSoon';
 
+// Format date helper
+const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    } catch (e) {
+        return dateString;
+    }
+};
+
 export default function BillsPage() {
     const [activeTab, setActiveTab] = useState('sales');
     const { invoices, loadInvoices } = useInvoiceStore();
@@ -108,7 +123,7 @@ export default function BillsPage() {
                                         <span className={styles.status}>{item.status}</span>
                                     </span>
                                 </div>
-                                <div className={styles.itemSub}>{item.date}</div>
+                                <div className={styles.itemSub}>{formatDate(item.date)}</div>
                             </div>
                             <div className={styles.itemAmount}>
                                 {formatCurrency(item.totals?.total || 0)}

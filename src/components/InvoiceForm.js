@@ -159,7 +159,7 @@ export default function InvoiceForm() {
                             <div style={{ flex: 1 }}>
                                 {type === 'LENDING' ? (
                                     <div style={{ marginBottom: 8 }}>
-                                        <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4 }}>Item Description / Subcategory</label>
+                                        <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4 }}>Item Description / Category</label>
                                         <input
                                             className={styles.input}
                                             value={item.name}

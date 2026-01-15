@@ -87,17 +87,22 @@ export const useInvoiceStore = create((set, get) => ({
             // Derive makingChargePerGram from total makingCharges
             const makingChargePerGram = netWeight > 0 ? makingCharges / netWeight : 0;
 
+            // API sends composite rate = ratePerGram + mcPerGram
+            // So we need to decompose: ratePerGram = rate - mcPerGram
+            const compositeRate = Number(item.rate) || 0;
+            const ratePerGram = compositeRate - makingChargePerGram;
+
             return {
                 id: item.id || Date.now(),
                 productId: item.productId,
                 name: item.description || item.name || '',
-                rate: item.rate || 0,
+                rate: compositeRate,
                 quantity: item.quantity || 1,
                 gstRate: item.taxRate || 3,
                 hsn: item.hsn || '',
                 grossWeight: Number(item.weight?.gross || item.grossWeight) || 0,
                 netWeight: netWeight,
-                ratePerGram: item.rate || 0,
+                ratePerGram: ratePerGram,  // Decomposed from composite rate
                 makingChargePerGram: makingChargePerGram,
                 purity: item.purity || ''
             };
@@ -192,13 +197,13 @@ export const useInvoiceStore = create((set, get) => ({
                 )
             };
         } else if (change > 0) {
-            const itemName = product.subCategory || product.name;
+            const itemName = product.category || product.name;
             const ratePerGram = Number(product.sellingPrice) || 0;
-            // Extract attributes from metal object or fallback
-            const makingChargePerGram = Number(product.metal?.makingCharges || product.makingCharges) || 0;
-            const grossWeight = Number(product.metal?.grossWeight || product.grossWeight) || 0;
-            const netWeight = Number(product.metal?.netWeight || product.netWeight) || 0;
-            const purity = product.metal?.purity || product.purity || '';
+            // Extract attributes from top level
+            const makingChargePerGram = Number(product.metal?.makingCharges) || 0;
+            const grossWeight = Number(product.grossWeight) || 0;
+            const netWeight = Number(product.netWeight) || 0;
+            const purity = product.purity || '';
 
             return {
                 items: [...state.items, {
@@ -233,24 +238,38 @@ export const useInvoiceStore = create((set, get) => ({
 
         set({ isLoading: true, error: null });
 
-        // Prepare items for backend
-        const preparedItems = items.map(item => ({
-            productId: item.productId,
-            description: item.name,
-            quantity: item.quantity || 1,
-            rate: item.ratePerGram || item.rate || 0,
-            taxRate: item.gstRate || 3,
-            weight: {
-                gross: Number(item.grossWeight) || 0,
-                net: Number(item.netWeight) || 0
-            },
-            amount: {
-                makingCharges: (Number(item.netWeight) || 0) * (Number(item.makingChargePerGram) || 0),
-                stoneCharges: 0
-            },
-            hsn: item.hsn || '',
-            purity: item.purity || ''
-        }));
+        // Prepare items for backend using correct field mapping:
+        // - quantity = netWeight (grams)
+        // - rate = ratePerGram + makingChargePerGram (composite rate)
+        // - taxRate = total GST %
+        // Backend calculates: itemSubtotal = quantity * rate
+        const preparedItems = items.map(item => {
+            const netWeight = Number(item.netWeight) || 0;
+            const ratePerGram = Number(item.ratePerGram) || 0;
+            const mcPerGram = Number(item.makingChargePerGram) || 0;
+            const compositeRate = ratePerGram + mcPerGram;
+            const materialValue = netWeight * ratePerGram;
+            const makingCharges = netWeight * mcPerGram;
+
+            return {
+                productId: item.productId || null,
+                description: item.name,
+                quantity: netWeight,  // Net weight in grams
+                rate: compositeRate,  // Rate/gm + MC/gm
+                taxRate: item.gstRate || 3,  // Total GST %
+                weight: {
+                    gross: Number(item.grossWeight) || 0,
+                    net: netWeight
+                },
+                amount: {
+                    makingCharges: makingCharges,
+                    materialValue: materialValue,
+                    stoneCharges: 0
+                },
+                hsn: item.hsn || '',
+                purity: item.purity || ''
+            };
+        });
 
         // Prepare invoice data - backend computes totals
         const invoiceData = {
@@ -316,24 +335,29 @@ export const useInvoiceStore = create((set, get) => ({
         }
     },
 
-    // Calculate totals for UI preview only - backend is authoritative
+    // Calculate totals for UI preview - matches backend logic exactly
+    // Backend formula: itemSubtotal = quantity × rate = netWeight × (ratePerGram + mcPerGram)
     calculateTotals: () => {
         const { items, details, roundOff, type } = get();
         let subtotal = 0;
+        let totalTax = 0;
 
         items.forEach(item => {
-            let itemTotal = 0;
-            if (item.productId || (item.netWeight !== undefined)) {
-                const netWeight = Number(item.netWeight) || 0;
-                const ratePerGram = Number(item.ratePerGram) || 0;
-                const mcPerGram = Number(item.makingChargePerGram) || 0;
-                const materialValue = netWeight * ratePerGram;
-                const makingCharge = netWeight * mcPerGram;
-                itemTotal = (materialValue + makingCharge) * (item.quantity || 1);
-            } else {
-                itemTotal = (item.rate || 0) * (item.quantity || 1);
-            }
-            subtotal += itemTotal;
+            const netWeight = Number(item.netWeight) || 0;
+            const ratePerGram = Number(item.ratePerGram) || 0;
+            const mcPerGram = Number(item.makingChargePerGram) || 0;
+            const taxRate = Number(item.gstRate) || 3;
+
+            // Backend formula: itemSubtotal = quantity × rate
+            // where quantity = netWeight, rate = ratePerGram + mcPerGram
+            const compositeRate = ratePerGram + mcPerGram;
+            const itemSubtotal = netWeight * compositeRate;
+
+            // Tax per item
+            const itemTax = itemSubtotal * (taxRate / 100);
+
+            subtotal += itemSubtotal;
+            totalTax += itemTax;
         });
 
         // LENDING BILL: No pricing
@@ -344,12 +368,13 @@ export const useInvoiceStore = create((set, get) => ({
             };
         }
 
-        // Tax calculation (preview only)
-        let cgstAmount = 0, sgstAmount = 0, totalTax = 0;
-        if (type !== 'PROFORMA') {
-            cgstAmount = (subtotal * 1.5) / 100;
-            sgstAmount = (subtotal * 1.5) / 100;
-            totalTax = cgstAmount + sgstAmount;
+        // CGST and SGST are each half of total tax
+        const cgstAmount = totalTax / 2;
+        const sgstAmount = totalTax / 2;
+
+        // For proforma, no tax
+        if (type === 'PROFORMA') {
+            totalTax = 0;
         }
 
         let total = subtotal + totalTax;
@@ -365,8 +390,14 @@ export const useInvoiceStore = create((set, get) => ({
         }
 
         return {
-            subtotal, totalTax, total: finalTotal, roundOffAmount,
-            rawTotal: total, cgst: cgstAmount, sgst: sgstAmount, igst: 0
+            subtotal,
+            totalTax,
+            total: finalTotal,
+            roundOffAmount,
+            rawTotal: total,
+            cgst: type === 'PROFORMA' ? 0 : cgstAmount,
+            sgst: type === 'PROFORMA' ? 0 : sgstAmount,
+            igst: 0
         };
     },
 

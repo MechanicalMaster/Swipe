@@ -14,20 +14,17 @@ export default function EditProductPage() {
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
     const { updateProduct, uploadProductImage, deleteProductImage } = useProductStore();
-    const { categories, loadCategories, subCategories, loadSubCategories } = useMasterStore();
+    const { categories, loadCategories } = useMasterStore();
     const [loading, setLoading] = useState(true);
     const [skuLocked, setSkuLocked] = useState(true);
 
     const [formData, setFormData] = useState({
-        type: 'product',
         name: '',
         sellingPrice: '',
         purchasePrice: '',
-        taxRate: 3,
         unit: 'gms',
         hsn: '',
         category: '',
-        subCategory: '',
         sku: '',
         description: '',
 
@@ -91,7 +88,6 @@ export default function EditProductPage() {
 
     useEffect(() => {
         loadCategories();
-        loadSubCategories();
     }, []);
 
     useEffect(() => {
@@ -110,11 +106,9 @@ export default function EditProductPage() {
                         name: product.name || '',
                         sellingPrice: product.sellingPrice ?? '',
                         purchasePrice: product.purchasePrice ?? '',
-                        taxRate: product.taxRate ?? 3,
                         unit: product.unit || 'gms',
                         hsn: product.hsn || '',
                         category: product.category || '',
-                        subCategory: product.subCategory || '',
                         sku: product.sku || '',
                         description: product.description || '',
                         vendorRef: product.vendorRef || '',
@@ -128,12 +122,11 @@ export default function EditProductPage() {
                         showOnline: product.showOnline ?? true,
                         notForSale: product.notForSale ?? false,
 
-                        // Flatten Metal Attributes
                         metalType: product.metal?.type || 'Gold',
                         metalColor: product.metal?.color || 'Yellow',
-                        purity: product.metal?.purity || '22K',
-                        grossWeight: product.metal?.grossWeight ?? '',
-                        netWeight: product.metal?.netWeight ?? '',
+                        purity: product.purity || '22K',
+                        grossWeight: product.grossWeight ?? '',
+                        netWeight: product.netWeight ?? '',
                         wastagePercentage: product.metal?.wastagePercentage ?? '',
                         wastageWeight: product.metal?.wastageWeight ?? '',
                         makingCharges: product.metal?.makingCharges ?? '',
@@ -192,11 +185,9 @@ export default function EditProductPage() {
             name: formData.name,
             sellingPrice: formData.sellingPrice ? Number(formData.sellingPrice) : null,
             purchasePrice: formData.purchasePrice ? Number(formData.purchasePrice) : null,
-            taxRate: formData.taxRate,
             unit: formData.unit,
             hsn: formData.hsn,
             category: formData.category,
-            subCategory: formData.subCategory,
             sku: formData.sku,
             description: formData.description,
             vendorRef: formData.vendorRef,
@@ -204,20 +195,22 @@ export default function EditProductPage() {
             hallmarkCert: formData.hallmarkCert,
             barcode: formData.barcode,
             launchDate: formData.launchDate || null,
-            showOnline: formData.showOnline,
-            notForSale: formData.notForSale,
+            showOnline: Boolean(formData.showOnline),
+            notForSale: Boolean(formData.notForSale),
             occasion: formData.occasion,
             collection: formData.collection,
             tags: formData.tags,
             // images: NOT included - managed via separate API calls
 
+            // Top-level jewellery fields (per updated schema)
+            grossWeight: Number(formData.grossWeight || 0),
+            netWeight: Number(formData.netWeight || 0),
+            purity: formData.purity,
+
             // Nested Objects
             metal: {
                 type: formData.metalType,
                 color: formData.metalColor,
-                purity: formData.purity,
-                grossWeight: Number(formData.grossWeight || 0),
-                netWeight: Number(formData.netWeight || 0),
                 wastagePercentage: Number(formData.wastagePercentage || 0),
                 wastageWeight: Number(formData.wastageWeight || 0),
                 makingCharges: Number(formData.makingCharges || 0),
@@ -373,37 +366,17 @@ export default function EditProductPage() {
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                 />
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <select
-                        className={styles.select}
-                        value={formData.category}
-                        onChange={e => setFormData({ ...formData, category: e.target.value, subCategory: '' })}
-                        style={{ flex: 1 }}
-                    >
-                        <option value="">Select Category</option>
-                        {categories.map(c => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
-                        ))}
-                    </select>
-                    <select
-                        className={styles.select}
-                        value={formData.subCategory}
-                        onChange={e => setFormData({ ...formData, subCategory: e.target.value })}
-                        style={{ flex: 1 }}
-                        disabled={!formData.category}
-                    >
-                        <option value="">Select Sub-category</option>
-                        {subCategories
-                            .filter(sc => {
-                                const parent = categories.find(c => c.name === formData.category);
-                                return parent && sc.categoryId === parent.id;
-                            })
-                            .map(sc => (
-                                <option key={sc.id} value={sc.name}>{sc.name}</option>
-                            ))
-                        }
-                    </select>
-                </div>
+                <select
+                    className={styles.select}
+                    value={formData.category}
+                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                    style={{ marginBottom: 12 }}
+                >
+                    <option value="">Select Category</option>
+                    {categories.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                </select>
             </div>
 
             <div style={{ position: 'relative' }}>
@@ -689,8 +662,8 @@ export default function EditProductPage() {
                 </div>
             </div>
 
-            {/* Taxation & Compliance*/}
-            <div className={styles.sectionTitle}>Taxation & Compliance</div>
+            {/* Compliance */}
+            <div className={styles.sectionTitle}>Compliance</div>
             <div className={styles.card}>
                 <div style={{ display: 'flex', gap: 12 }}>
                     <input
@@ -698,20 +671,8 @@ export default function EditProductPage() {
                         placeholder="HSN Code"
                         value={formData.hsn}
                         onChange={e => setFormData({ ...formData, hsn: e.target.value })}
-                        style={{ flex: 1 }}
-                    />
-                    <select
-                        className={styles.select}
-                        value={formData.taxRate}
-                        onChange={e => setFormData({ ...formData, taxRate: Number(e.target.value) })}
                         style={{ flex: 1, marginBottom: 12 }}
-                    >
-                        <option value={0}>Tax Rate 0%</option>
-                        <option value={3}>Tax Rate 3%</option>
-                        <option value={5}>Tax Rate 5%</option>
-                        <option value={12}>Tax Rate 12%</option>
-                        <option value={18}>Tax Rate 18%</option>
-                    </select>
+                    />
                 </div>
                 <input
                     className={styles.input}
